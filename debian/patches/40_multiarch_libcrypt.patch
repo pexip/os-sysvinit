@@ -1,0 +1,21 @@
+Purpose: Use multiarch library search path to find and link with libcrypt
+Author:  Roger Leigh
+Fixes:   #629677
+Status:  Not sent upstream.
+
+--- sysvinit-2.88dsf.original/src/Makefile	2011-06-09 14:45:17.442273576 +0100
++++ sysvinit-2.88dsf/src/Makefile	2011-06-09 14:46:43.267345934 +0100
+@@ -77,10 +77,15 @@
+   SULOGINLIBS	=
+ endif
+ 
++LIBDIR=/usr/lib
+ # Additional libs for GNU libc.
+ ifneq ($(wildcard /usr/lib*/libcrypt.a),)
++  SULOGINLIBS   += -lcrypt
++else
++ifneq ($(wildcard $(LIBDIR)*/libcrypt.a),)
+   SULOGINLIBS	+= -lcrypt
+ endif
++endif
+ 
