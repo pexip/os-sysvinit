@@ -1,3 +1,9 @@
+sysvinit (2.88dsf-13.10ubuntu11.1pexip1) pexip; urgency=low
+
+  * Prepare Pexip packaging
+
+ -- John-Mark Bell <jmb@pexip.com>  Wed, 25 Dec 2013 04:51:02 +0000
+
 sysvinit (2.88dsf-13.10ubuntu11.1) precise-proposed; urgency=low
 
   * Cherry-pick fix from git to better handle chroot in postinst and change

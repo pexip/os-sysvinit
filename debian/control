@@ -1,14 +1,16 @@
 Source: sysvinit
 Section: admin
 Priority: required
-Maintainer: Ubuntu Core Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Maintainer: Pexip AS <packaging@pexip.com>
+XSBC-Pexip-Original-Maintainer: Ubuntu Core Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 XSBC-Original-Maintainer: Debian sysvinit maintainers <pkg-sysvinit-devel@lists.alioth.debian.org>
-Uploaders: Petter Reinholdtsen <pere@debian.org>, Henrique de Moraes Holschuh <hmh@debian.org>, Kel Modderman <kel@otaku42.de>
+XSBC-Pexip-Original-Uploaders: Petter Reinholdtsen <pere@debian.org>, Henrique de Moraes Holschuh <hmh@debian.org>, Kel Modderman <kel@otaku42.de>
 Build-Depends: debhelper (>= 7), po-debconf, quilt (>= 0.40), libselinux1-dev (>= 1.14) [!hurd-i386 !kfreebsd-i386 !kfreebsd-amd64], libsepol1-dev [!hurd-i386 !kfreebsd-i386 !kfreebsd-amd64]
 Standards-Version: 3.9.1
 Homepage: http://savannah.nongnu.org/projects/sysvinit
 Vcs-Svn: svn://svn.debian.org/pkg-sysvinit/sysvinit/trunk
 Vcs-Browser: http://svn.debian.org/wsvn/pkg-sysvinit/sysvinit/trunk/
+XS-Pexip-Upstream: http://archive.ubuntu.com/ubuntu/ precise
 
 Package: sysvinit-utils
 Architecture: any
