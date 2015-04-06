@@ -36,6 +36,8 @@ FORCE=
 RETRY=
 RETURNFAILURE=
 RC=
+is_upstart=
+is_systemd=
 
 # Shell options
 set +e
@@ -265,9 +267,20 @@ case ${ACTION} in
 	;;
 esac
 
-## Verifies if the given initscript ID is known
-## For sysvinit, this error is critical
-if test ! -f "${INITDPREFIX}${INITSCRIPTID}" ; then
+# Operate against system upstart, not session
+unset UPSTART_SESSION
+# If we're running on upstart and there's an upstart job of this name, do
+# the rest with upstart instead of calling the init script.
+if which initctl >/dev/null && initctl version 2>/dev/null | grep -q upstart \
+   && initctl status ${INITSCRIPTID} 1>/dev/null 2>/dev/null
+then
+    is_upstart=1
+elif test -d /run/systemd/system ; then
+    is_systemd=1
+    UNIT="${INITSCRIPTID%.sh}.service"
+elif test ! -f "${INITDPREFIX}${INITSCRIPTID}" ; then
+    ## Verifies if the given initscript ID is known
+    ## For sysvinit, this error is critical
     printerror unknown initscript, ${INITDPREFIX}${INITSCRIPTID} not found.
     exit 100
 fi
@@ -282,7 +295,7 @@ if test ! $? ; then
     RL=
 fi
 
-## Running ${RUNLEVELHELPER} to get current runlevel does not work in
+## Running ${RUNLEVELHELPER} to get current runlevel do not work in
 ## the boot runlevel (scripts in /etc/rcS.d/), as /var/run/utmp
 ## contains runlevel 0 or 6 (written at shutdown) at that point.
 if test x${RL} = x0 || test x${RL} = x6 ; then
@@ -375,7 +388,18 @@ case ${ACTION} in
 esac
 
 # test if /etc/init.d/initscript is actually executable
-if testexec "${INITDPREFIX}${INITSCRIPTID}" ; then
+_executable=
+if [ -n "$is_upstart" ]; then
+    _executable=1
+elif [ -n "$is_systemd" ]; then
+    _state=$(systemctl -p LoadState show "${UNIT}" 2>/dev/null)
+    if [ "$_state" != "LoadState=masked" ]; then
+        _executable=1
+    fi
+elif testexec "${INITDPREFIX}${INITSCRIPTID}"; then
+   _executable=1
+fi
+if [ "$_executable" = "1" ]; then
     if test x${RC} = x && test x${MODE} = xquery ; then
         RC=105
     fi
@@ -422,11 +446,25 @@ getnextaction () {
     ACTION="$@"
 }
 
+if [ -n "$is_upstart" ]; then
+    RUNNING=
+    DISABLED=
+    if status "$INITSCRIPTID" 2>/dev/null | grep -q ' start/'; then
+	RUNNING=1
+    fi
+    UPSTART_VERSION_RUNNING=$(initctl version|awk '{print $3}'|tr -d ')')
+
+    if dpkg --compare-versions "$UPSTART_VERSION_RUNNING" ge 0.9.7
+    then
+	initctl show-config -e "$INITSCRIPTID"|grep -q '^  start on' || DISABLED=1
+    fi
+fi
+
 ## Executes initscript
 ## note that $ACTION is a space-separated list of actions
 ## to be attempted in order until one suceeds.
 if test x${FORCE} != x || test ${RC} -eq 104 ; then
-    if testexec "${INITDPREFIX}${INITSCRIPTID}" ; then
+    if [ -n "$is_upstart" ] || testexec "${INITDPREFIX}${INITSCRIPTID}" ; then
 	RC=102
 	setechoactions ${ACTION}
 	while test ! -z "${ACTION}" ; do
@@ -435,7 +473,84 @@ if test x${FORCE} != x || test ${RC} -eq 104 ; then
 		printerror executing initscript action \"${saction}\"...
 	    fi
 
-	    "${INITDPREFIX}${INITSCRIPTID}" "${saction}" "$@" && exit 0
+	    if [ -n "$is_upstart" ]; then
+		case $saction in
+		    status)
+			"$saction" "$INITSCRIPTID" && exit 0
+			;;
+		    start|stop)
+			if [ -z "$RUNNING" ] && [ "$saction" = "stop" ]; then
+			    exit 0
+			elif [ -n "$RUNNING" ] && [ "$saction" = "start" ]; then
+			    exit 0
+			elif [ -n "$DISABLED" ] && [ "$saction" = "start" ]; then
+			    exit 0
+			fi
+			$saction "$INITSCRIPTID" && exit 0
+			;;
+		    restart)
+			if [ -n "$RUNNING" ] ; then
+			    stop "$INITSCRIPTID"
+			fi
+
+			# If the job is disabled and is not currently
+			# running, the job is not restarted. However, if
+			# the job is disabled but has been forced into
+			# the running state, we *do* stop and restart it
+			# since this is expected behaviour
+			# for the admin who forced the start.
+			if [ -n "$DISABLED" ] && [ -z "$RUNNING" ]; then
+			    exit 0
+			fi
+			start "$INITSCRIPTID" && exit 0
+			;;
+		    reload|force-reload)
+			reload "$INITSCRIPTID" && exit 0
+			;;
+		    *)
+			# This will almost certainly fail, but give it a try
+			initctl "$saction" "$INITSCRIPTID" && exit 0
+			;;
+		esac
+            elif [ -n "$is_systemd" ]; then
+                if [ -n "$DPKG_MAINTSCRIPT_PACKAGE" ]; then
+                    # If we are called by a maintainer script, chances are good that a
+                    # new or updated sysv init script was installed.  Reload daemon to
+                    # pick up any changes.
+                    systemctl daemon-reload
+                fi
+                case $saction in
+                    start|stop|restart|status)
+                        systemctl "${saction}" "${UNIT}" && exit 0
+                        ;;
+                    reload)
+                        _canreload="$(systemctl -p CanReload show ${UNIT} 2>/dev/null)"
+                        if [ "$_canreload" = "CanReload=no" ]; then
+                            "${INITDPREFIX}${INITSCRIPTID}" "${saction}" "$@" && exit 0
+                        else
+                            systemctl reload "${UNIT}" && exit 0
+                        fi
+                        ;;
+                    force-stop)
+                        systemctl --signal=KILL kill "${UNIT}" && exit 0
+                        ;;
+                    force-reload)
+                        _canreload="$(systemctl -p CanReload show ${UNIT} 2>/dev/null)"
+                        if [ "$_canreload" = "CanReload=no" ]; then
+                           systemctl restart "${UNIT}" && exit 0
+                        else
+                           systemctl reload "${UNIT}" && exit 0
+                        fi
+                        ;;
+                    *)
+                        # We try to run non-standard actions by running
+                        # the init script directly.
+                        "${INITDPREFIX}${INITSCRIPTID}" "${saction}" "$@" && exit 0
+                        ;;
+                esac
+	    else
+		"${INITDPREFIX}${INITSCRIPTID}" "${saction}" "$@" && exit 0
+	    fi
 	    RC=$?
 
 	    if test ! -z "${ACTION}" ; then

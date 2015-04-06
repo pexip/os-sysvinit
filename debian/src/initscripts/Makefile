@@ -10,29 +10,23 @@ INSTALL_DATA = install -m644 -o root -g root
 all:
 
 install:
-	# TODO: Replace /lib/init/rw directory with symbolic link to
-	# /run.  This requires the directory to be empty and unused,
-	# so needs doing post-wheezy.  If the migration to /run is
-	# complete, could be removed entirely.
+	$(INSTALL) -d $(DESTDIR)/lib/init/.
 	$(INSTALL) -d $(DESTDIR)/run/.
-	$(INSTALL) -d $(DESTDIR)/lib/init/rw/.
 	$(INSTALL) -d $(DESTDIR)/var/lib/initscripts/.
 	$(INSTALL) -d $(DESTDIR)/var/lib/urandom/.
 	$(INSTALL) -d $(DESTDIR)/var/log/fsck/.
 	$(INSTALL) -d $(DESTDIR)$(docdir)/.
 	$(INSTALL_DATA) doc/* $(DESTDIR)$(docdir)
-	$(INSTALL) -d $(DESTDIR)/usr/share/initscripts
-	cp -afv share/* $(DESTDIR)/usr/share/initscripts
-	find $(DESTDIR)/usr/share/initscripts -type d -name .svn -print0 |xargs -r0 rm -r
 
 	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/.
 	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/default
 	cp -afv etc/* $(DESTDIR)$(sysconfdir)
 	find $(DESTDIR)$(sysconfdir) -type d -name .svn -print0 |xargs -r0 rm -r
 
-	cp -afv lib/* $(DESTDIR)/lib
+	cp -afv lib/init/* $(DESTDIR)/lib/init
 	find $(DESTDIR)/lib -type d -name .svn  -print0 |xargs -r0 rm -r
 	chmod 755 $(DESTDIR)$(sysconfdir)/init.d/[a-z]*
+	chmod 755 $(DESTDIR)$(sysconfdir)/network/if-up.d/[a-z]*
 	chmod 644 $(DESTDIR)/lib/init/*.sh
 	chmod 644 $(DESTDIR)$(sysconfdir)/init.d/skeleton
 	chmod -R g-w $(DESTDIR)
