@@ -21,6 +21,7 @@ NAME=stop-bootlogd-single
 DAEMON=/sbin/bootlogd
 
 [ -x "$DAEMON" ] || exit 0
+[ -d /run/systemd/system ] && exit 0
 
 case "$1" in
   start)

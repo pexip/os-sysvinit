@@ -5,7 +5,6 @@ sysvtmp = $(CURDIR)/debian/sysvinit-core
 utiltmp = $(CURDIR)/debian/sysvinit-utils
 rctmp   = $(CURDIR)/debian/sysv-rc
 inittmp = $(CURDIR)/debian/initscripts
-sysvinittmp = $(CURDIR)/debian/sysvinit
 bootlogdtmp = $(CURDIR)/debian/bootlogd
 doc	= /usr/share/doc
 
@@ -68,9 +67,6 @@ override_dh_install-arch:
 			$(sysvtmp)/usr/share/sysvinit/inittab ; \
 	fi
 
-	$(INSTALL) debian/share/update-rc.d $(sysvtmp)/usr/share/sysvinit/
-	$(INSTALL) $(tmp)/sbin/init $(sysvinittmp)/lib/sysvinit/
-
 	# initscripts package may include /sys
 ifneq (,$(findstring $(DEB_HOST_ARCH_OS),linux kfreebsd))
 	$(INSTALL) -d $(inittmp)/sys
@@ -81,8 +77,6 @@ install-arch: build-arch
 
 override_dh_installchangelogs-arch:
 	dh_installchangelogs -psysvinit-core doc/Changelog
-
-	dh_installchangelogs -psysvinit
 
 	dh_installchangelogs -psysvinit-utils doc/Changelog
 	sed -i -ne '/sysvinit (2.86.ds1-47)/q' -e p \

@@ -1,3 +1,166 @@
+sysvinit (2.88dsf-59.9) unstable; urgency=medium
+
+  [ Martin Pitt ]
+  * Mark sysvinit-utils as Multi-Arch: foreign, like sysv-rc and initscripts.
+
+  [ Michael Biebl ]
+  * Demote priority of sysv-rc and initscripts to optional.
+
+  [ Petter Reinholdtsen ]
+  * Avoid remounting tmpfs, linprocfs and linsysfs on kFreeBSD
+    (Closes: #833687).  These file systems are not remountable.  The
+    change avoid a warning from mount.  Based on Patch from Jon Boden.
+
+  [ Ian Jackson ]
+  * Add myself to Uploaders, as part of adopting the package.
+    Closes:#811377 (RFA bug).
+  * Add Benda Xu to Uploaders, as requested in #811377.
+
+  [ Ben Hutchings ]
+  * Keep /usr mounted read-only on shutdown (Closes: #757083)
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 12 Feb 2017 21:55:39 +0000
+
+sysvinit (2.88dsf-59.8) unstable; urgency=medium
+
+  * Non-maintainer upload.
+
+  [ Benda Xu ]
+  * Add openrc to the dependencies of initscripts and sysvinit-core.
+    openrc is going to drop Provides: sysv-rc.
+
+  [ Michael Biebl ]
+  * Update Vcs-* fields to use the canonical alioth URLs and prefer https://.
+  * Drop obsolete Conflicts, Breaks and Replaces from pre-wheezy.
+  * Drop Suggests: sash from sysvinit-utils. It is obsolete now that we use
+    the sulogin implementation from util-linux.
+  * Move Suggests: bootlogd from sysvinit-utils to sysvinit-core. Under
+    systemd, bootlogd is non-functional. So only suggest its installation when
+    sysvinit-core is the active init system. (Closes: #754443)
+  * Document that /etc/default/{rcS,tmpfs} are ignored when systemd is the
+    active init system. (Closes: #776963)
+  * Drop transitional sysvinit package. It has served its purpose for the
+    wheezy → jessie transition and keeping it around for longer only leads to
+    confusion as it doesn't setup /etc/inittab which is necessary to boot with
+    SysV. This functionality has moved into sysvinit-core, which should be
+    used instead in such a case. (Closes: #781766)
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 20 Jul 2016 15:28:28 +0200
+
+sysvinit (2.88dsf-59.7) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Drop sysvinit-utils' versioned Breaks: on initscripts, as this causes apt
+    to fail upgrades because of Breaks/Depends loops on essential packages.
+    Only keep the Replaces: for moving vars.sh. (Closes: #827705)
+
+ -- Martin Pitt <mpitt@debian.org>  Wed, 22 Jun 2016 12:33:26 +0200
+
+sysvinit (2.88dsf-59.6) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Bump versioned initscripts dependency to sysvinit-utils to ensure that we
+    get the one with vars.sh. (Closes: #827212)
+
+ -- Martin Pitt <mpitt@debian.org>  Mon, 13 Jun 2016 22:04:06 +0300
+
+sysvinit (2.88dsf-59.5) unstable; urgency=medium
+
+  * Non-maintainer upload.
+
+  [ Andreas Henriksson ]
+  * bootlogd: mention it won't do anything under systemd (Closes: #791907)
+
+  [ Martin Pitt ]
+  * Move /lib/init/vars.sh from initscripts to sysvinit-utils. It's not
+    specific to initscripts, but API for other init scripts similar to
+    /lib/init/init-d-script. This will allow initscripts to drop from the
+    default installation. (Closes: #826205)
+  * Drop startpar dependency from sysvinit-utils. It's only being used by
+    sysv-rc and remains a dependency of that. (Closes: #825937)
+
+ -- Martin Pitt <mpitt@debian.org>  Wed, 08 Jun 2016 15:25:01 +0200
+
+sysvinit (2.88dsf-59.4) unstable; urgency=medium
+
+  * Non-maintainer upload.
+
+  [ Petter Reinholdtsen ]
+  * Fix typo in init-d-script(5) reported by Eric S. Raymond.
+
+  [ Andreas Henriksson ]
+  * sysvinit-utils: move util-linux back to Depends (instead of Breaks)
+    - that's where it belonged and can be put now that the cyclic-dep
+      (via initscripts pkg) workaround is no longer needed.
+    - also bump util-linux version to the one with the matching change.
+    Closes: #823569
+  * Add a basic debian/gbp.conf with debian/upstream branch names
+
+ -- Andreas Henriksson <andreas@fatal.se>  Fri, 06 May 2016 05:55:46 +0200
+
+sysvinit (2.88dsf-59.3) unstable; urgency=medium
+
+  * Non-maintainer upload.
+
+  [ Samuel Thibault ]
+  * /etc/init.d/rc: Mount /proc on GNU/Hurd too (Closes: #798406)
+
+  [ Ben Hutchings ]
+  * Add support for mount and fsck of root and /usr by an initramfs:
+    - checkroot.sh: Do nothing if /run/initramfs/fsck-root exists
+    - checkfs.sh: Pass -M option to fsck instead of -R (Closes: #697002)
+    - mountall.sh: Remount /usr if already mounted
+  * Remove current uploaders, all of which have retired
+
+  [ Andreas Henriksson ]
+  * Move service control commands to init-system-helpers (Closes: #805487)
+    - sysv-rc: Drop invoke-rc.d + update-rc.d
+    - sysvinit-utils: Drop service
+    - sysv-rc/sysvinit-utils: (Pre-)Depends on init-system-helpers
+    - sysv-rc: drop now obsolete Conflicts/Replaces file-rc
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Mon, 18 Jan 2016 14:39:32 +0000
+
+sysvinit (2.88dsf-59.2) unstable; urgency=medium
+
+  * Non-maintainer upload.
+
+  [ Martin Pitt ]
+  * Previous version introduced a circular dependency sysvinit-utils →
+    util-linux → initscripts →  sysvinit-utils. Drop sysvinit-utils' versioned
+    Depends: on util-linux again and replace with versioned Breaks:.
+    This fixes debootstrap troubles like LP: #1456670.
+  * service, invoke-rc.d: Don't ignore systemd unit dependencies in "degraded"
+    mode. Followup fix for #777113, see LP: #1429734.
+  * Drop 91_sulogin_lockedpw.dpatch: Obsolete now that we ship sulogin from
+    util-linux.
+
+  [ Andreas Henriksson ]
+  * Update dependency for /bin/mountpoint being moved to util-linux instead
+    of mount. Use breaks instead of depends to avoid circular dependency.
+
+ -- Martin Pitt <mpitt@debian.org>  Thu, 21 May 2015 13:33:26 +0200
+
+sysvinit (2.88dsf-59.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+
+  [ Martin Pitt ]
+  * service, invoke-rc.d: Avoid deadlocks during bootup and shutdown from
+    units/hooks which call "invoke-rc.d service reload" and similar, since the
+    synchronous wait plus systemd's normal behaviour of transactionally
+    processing all dependencies first easily causes dependency loops. Thus
+    during boot/shutdown operate only on the unit and not on its dependencies,
+    just like SysV behaves. (Closes: #777113)
+  * Make sysvinit-utils and sysv-rc break systemd << 215 to ensure we have the
+    "systemctl is-system-running" command.
+
+  [ Andreas Henriksson ]
+  * Let mount (src:util-linux) provide mountpoint (Closes: #399608)
+  * Let util-linux provide sulogin, last, lastb, mesg (Closes: #784567)
+
+ -- Andreas Henriksson <andreas@fatal.se>  Tue, 12 May 2015 11:21:13 +0200
+
 sysvinit (2.88dsf-59) unstable; urgency=medium
 
   * Call 'systemctl daemon-reload' after any insserv call if systemd

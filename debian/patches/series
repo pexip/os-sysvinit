@@ -10,7 +10,6 @@
 40_multiarch_libcrypt.patch
 63_init_keep_utf8_ttyflag.patch
 64_init_selinux_enabled.patch
-91_sulogin_lockedpw.dpatch
 92_kfreebsd_ifdown.patch
 93_run_initctl.patch
 94_kfreebsd_xterm.patch

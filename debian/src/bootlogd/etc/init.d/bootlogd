@@ -35,6 +35,14 @@ case "$0" in
 	;;
 esac
 
+if [ -d /run/system/system ]; then
+	if [ "$ACTION" = start ] && [ -f /var/log/boot ]; then
+		echo "(Booted up using systemd which doesn't write logs to system console. Please check 'journalctl -b' instead.)" > /var/log/boot
+	fi
+	log_daemon_msg "Skipping $NAME while running systemd"
+	exit 0
+fi
+
 case "$ACTION" in
   start)
   	# PATH is set above
