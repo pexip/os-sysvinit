@@ -149,17 +149,8 @@ fi
 if [ -x /etc/init.d/single ]; then
 update-rc.d single                 defaults >/dev/null || exit $?
 fi
-if [ -x /etc/init.d/motd ]; then
-update-rc.d motd                   defaults >/dev/null || exit $?
-fi
-if [ -x /etc/init.d/bootlogs ]; then
-update-rc.d bootlogs               defaults >/dev/null || exit $?
-fi
 if [ -x /etc/init.d/rc.local ]; then
 update-rc.d rc.local               defaults >/dev/null || exit $?
-fi
-if [ -x /etc/init.d/rmnologin ]; then
-update-rc.d rmnologin              defaults >/dev/null || exit $?
 fi
 
 #
