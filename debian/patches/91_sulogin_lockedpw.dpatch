@@ -29,7 +29,7 @@ Status:  unknown
 +	 */
 +	if ((strcmp(pwd->pw_passwd, "*") == 0) ||
 +	    (strcmp(pwd->pw_passwd, "!") == 0)) {
-+		fprintf(stderr, "sulogin: root account is locked, starting shell\n");
++		/* fprintf(stderr, "sulogin: root account is locked, starting shell\n"); */
 +		sushell(pwd);
 +	}
  
