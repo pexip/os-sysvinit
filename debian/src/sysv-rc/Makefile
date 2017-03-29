@@ -13,7 +13,6 @@ all:
 install:
 	$(INSTALL) -d $(DESTDIR)$(docdir)/.
 	$(INSTALL) -d $(DESTDIR)/var/lib/insserv
-	$(INSTALL) -d $(DESTDIR)/var/lib/update-rc.d
 	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/.
 	$(INSTALL_DATA) doc/* $(DESTDIR)$(docdir)/.
 	cp -af etc/* $(DESTDIR)$(sysconfdir)

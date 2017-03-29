@@ -51,17 +51,17 @@ po::powerokwait:/etc/init.d/powerfail stop
 # Note that on most Debian systems ttyv6 is used by the X Window System,
 # so if you want to add more getty's go ahead but skip ttyv6 if you run X.
 #
-1:2345:respawn:/sbin/getty 38400 ttyv0 cons25
-2:23:respawn:/sbin/getty 38400 ttyv1 cons25
-3:23:respawn:/sbin/getty 38400 ttyv2 cons25
-4:23:respawn:/sbin/getty 38400 ttyv3 cons25
-5:23:respawn:/sbin/getty 38400 ttyv4 cons25
-6:23:respawn:/sbin/getty 38400 ttyv5 cons25
+1:2345:respawn:/sbin/getty 38400 ttyv0 xterm
+2:23:respawn:/sbin/getty 38400 ttyv1 xterm
+3:23:respawn:/sbin/getty 38400 ttyv2 xterm
+4:23:respawn:/sbin/getty 38400 ttyv3 xterm
+5:23:respawn:/sbin/getty 38400 ttyv4 xterm
+6:23:respawn:/sbin/getty 38400 ttyv5 xterm
 
 # Example how to put a getty on a serial line (for a terminal)
 #
-#T0:23:respawn:/sbin/getty -L ttyd0 9600 vt100
-#T1:23:respawn:/sbin/getty -L ttyd1 9600 vt100
+#T0:23:respawn:/sbin/getty -L cuau0 9600 vt100
+#T1:23:respawn:/sbin/getty -L cuau1 9600 vt100
 
 # Example how to put a getty on a modem line.
 #

@@ -3,9 +3,10 @@ Author:  Roger Leigh
 Fixes:   #629677
 Status:  Not sent upstream.
 
---- sysvinit-2.88dsf.original/src/Makefile	2011-06-09 14:45:17.442273576 +0100
-+++ sysvinit-2.88dsf/src/Makefile	2011-06-09 14:46:43.267345934 +0100
-@@ -77,10 +77,15 @@
+
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -78,10 +78,15 @@ else
    SULOGINLIBS	=
  endif
  
@@ -18,4 +19,6 @@ Status:  Not sent upstream.
    SULOGINLIBS	+= -lcrypt
  endif
 +endif
+ 
+ all:		$(BIN) $(SBIN) $(USRBIN)
  

@@ -1,91 +1,66 @@
 # Danish translation sysvinit.
-# Copyright (C) 2010 sysvinit & Joe Hansen.
+# Copyright (C) 2012 sysvinit & Joe Hansen.
 # This file is distributed under the same license as the sysvinit package.
-# Joe Hansen <joedalton2@yahoo.dk>, 2010
+# Joe Hansen <joedalton2@yahoo.dk>, 2010, 2012.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: sysvinit\n"
 "Report-Msgid-Bugs-To: sysvinit@packages.debian.org\n"
-"POT-Creation-Date: 2009-10-25 21:24+0100\n"
-"PO-Revision-Date: 2010-10-07 17:30+01:00\n"
+"POT-Creation-Date: 2012-06-09 08:51+0200\n"
+"PO-Revision-Date: 2012-06-10 17:30+01:00\n"
 "Last-Translator: Joe Hansen <joedalton2@yahoo.dk>\n"
-"Language-Team: Danish <debian-l10n-danish@lists.debian.org> \n"
+"Language-Team: Danish <debian-l10n-danish@lists.debian.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#. Type: boolean
-#. Description
-#: ../sysv-rc.templates:1001
-msgid "Migrate legacy boot sequencing to dependency-based sequencing?"
-msgstr "Migrer forældet opstartssekvenser til afhængighedsbaserede sekvenser?"
-
-#. Type: boolean
-#. Description
-#: ../sysv-rc.templates:1001
-msgid ""
-"The boot system is prepared to migrate to dependency-based sequencing. This "
-"is an irreversible step, but one that is recommended: it allows the boot "
-"process to be optimized for speed and efficiency, and provides a more "
-"resilient framework for development."
-msgstr ""
-"Opstartssystemet er forberedt til at migrere til afhængighedsbaserede "
-"sekvenser. Dette trin kan ikke omgøres, men det anbefales alligevel: Det "
-"tillader, at opstartsprocessen optimeres i forhold til hastighed og "
-"effektivitet, og tilbyder en mere modstandsdygtig ramme for udvikling."
-
-#. Type: boolean
-#. Description
-#: ../sysv-rc.templates:1001
-msgid ""
-"A full rationale is detailed in /usr/share/doc/sysv-rc/README.Debian. If you "
-"choose not to migrate now, you can do so later by running \"dpkg-reconfigure "
-"sysv-rc\"."
-msgstr ""
-"En fuld og detaljeret beskrivelse kan ses i /usr/share/doc/sysv-rc/README."
-"Debian. Hvis du vælger ikke at migrere nu, kan du gøre det senere ved at "
-"køre »dpkg-reconfigure sysv-rc«."
-
 #. Type: note
 #. Description
-#: ../sysv-rc.templates:2001
+#: ../sysv-rc.templates:1001
 msgid "Unable to migrate to dependency-based boot system"
 msgstr "Kunne ikke migrere til afhængighedsbaseret opstartssystem"
 
 #. Type: note
 #. Description
-#: ../sysv-rc.templates:2001
+#: ../sysv-rc.templates:1001
 msgid ""
-"Tests have determined that problems in the boot system exist which prevent "
-"migration to dependency-based boot sequencing:"
+"Problems in the boot system exist which are preventing migration to "
+"dependency-based boot sequencing:"
 msgstr ""
-"Test har afgjort, at der findes problemer i opstartssystemet som forhindrer "
-"migrering til afhængighedsbaserede opstartssekvenser:"
+"Der findes problemer i opstartssystemet som forhindrer migrering til "
+"afhængighedsbaserede opstartssekvenser:"
 
 #. Type: note
 #. Description
-#: ../sysv-rc.templates:2001
+#: ../sysv-rc.templates:1001
 msgid ""
 "If the reported problem is a local modification, it needs to be fixed "
-"manually. If it's a bug in the package, it should be reported to the BTS and "
-"fixed in the package. See http://wiki.debian.org/LSBInitScripts/"
-"DependencyBasedBoot for more information about how to fix the problems "
-"preventing migration."
+"manually.  These are typically due to obsolete conffiles being left after a "
+"package has been removed, but not purged.  It is suggested that these are "
+"removed by running:"
 msgstr ""
-"Hvis det rapporterede problem er en lokal ændring, skal den rettes manuelt. "
-"Hvis det er en fejl i pakken, bør den rapporteres til BTS'en og rettes i "
-"pakken. Se http://wiki.debian.org/LSBInitScripts/DependencyBasedBoot for "
-"yderligere information om hvordan problemer, der forhindrer migrering, kan "
-"rettes."
+"Hvis de rapporterede problemer er lokale ændringer, skal de rettes "
+"manuelt. Problemet skyldes typisk forældede konfigurationsfiler efterladt "
+"efter at en pakke er blevet fjernet, men ikke afinstalleret. Det foreslås "
+"at disse fjernes ved at køre:"
 
 #. Type: note
 #. Description
-#: ../sysv-rc.templates:2001
+#: ../sysv-rc.templates:1001
+msgid "${SUGGESTION}"
+msgstr "${SUGGESTION}"
+
+#. Type: note
+#. Description
+#: ../sysv-rc.templates:1001
 msgid ""
-"To reattempt the migration process after the problems have been fixed, run "
-"\"dpkg-reconfigure sysv-rc\"."
+"Package installation can not continue until the above problems have been "
+"fixed.  To reattempt the migration process after these problems have been "
+"fixed, run \"dpkg --configure sysv-rc\"."
 msgstr ""
-"For at forsøge migreringsprocessen igen efter at problemerne er blevet "
-"rettet, kør »dpkg-reconfigure sysv-rc«."
+"Pakkeinstallation kan ikke fortsætte, før at de ovenstående problemer "
+"er blevet rettet. For at prøve migreringsprocessen igen efter at "
+"problemerne er blevet rettet, kør »dpkg-reconfigure sysv-rc«."
+

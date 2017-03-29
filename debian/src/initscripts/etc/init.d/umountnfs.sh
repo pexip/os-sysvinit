@@ -36,30 +36,22 @@ do_stop () {
 	halt -w
 
 	# Remove bootclean flag files (precaution against symlink attacks)
-	rm -f /tmp/.clean
+	rm -f /tmp/.clean /run/.clean /run/lock/.clean
 
 	#
 	# Make list of points to unmount in reverse order of their creation
 	#
 
-	exec 9<&0 </etc/mtab
-
 	DIRS=""
 	while read -r DEV MTPT FSTYPE OPTS REST
 	do
 		case "$MTPT" in
-		  /|/proc|/dev|/dev/pts|/dev/shm|/proc/*|/sys|/run|/run/*|/lib/init/rw)
-			continue
-			;;
-		  /var/run)
-			continue
-			;;
-		  /var/lock)
+		  /|/proc|/dev|/dev/pts|/dev/shm|/proc/*|/sys|/run|/run/*)
 			continue
 			;;
 		esac
 		case "$FSTYPE" in
-		  nfs|nfs4|smbfs|ncp|ncpfs|cifs|coda|ocfs2|gfs)
+		  nfs|nfs4|smbfs|ncp|ncpfs|cifs|coda|ocfs2|gfs|ceph)
 			DIRS="$MTPT $DIRS"
 			;;
 		  proc|procfs|linprocfs|devpts|usbfs|usbdevfs|sysfs)
@@ -71,9 +63,7 @@ do_stop () {
 			DIRS="$MTPT $DIRS"
 			;;
 		esac
-	done
-
-	exec 0<&9 9<&-
+	done < /etc/mtab
 
 	if [ "$DIRS" ]
 	then
@@ -85,11 +75,13 @@ do_stop () {
 
 	# emit unmounted-remote-filesystems hook point so any upstart jobs
 	# that support remote filesystems can be stopped
-	initctl --quiet emit unmounted-remote-filesystems
+	if [ -x /sbin/initctl ]; then
+		initctl --quiet emit unmounted-remote-filesystems 2>/dev/null || true
+	fi
 }
 
 case "$1" in
-  start)
+  start|status)
 	# No-op
 	;;
   restart|reload|force-reload)
