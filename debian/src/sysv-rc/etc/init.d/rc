@@ -69,7 +69,7 @@ fi
 # insserv package to be enabled. Boot concurrency also requires
 # startpar to be installed.
 #
-CONCURRENCY=makefile
+CONCURRENCY=none
 test -s /etc/init.d/.depend.boot  || CONCURRENCY="none"
 test -s /etc/init.d/.depend.start || CONCURRENCY="none"
 test -s /etc/init.d/.depend.stop  || CONCURRENCY="none"

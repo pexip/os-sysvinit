@@ -27,7 +27,6 @@ Architecture: any
 Conflicts: last, sysvconfig, chkconfig (<< 11.0-79.1-2), startpar (<< 0.58-2)
 Replaces: last, sysvinit (<= 2.86.ds1-65)
 Depends: ${shlibs:Depends}, ${misc:Depends}
- , startpar
 Breaks: upstart (<< 1.5-0ubuntu5)
 Suggests: bootlogd, sash
 Description: System-V-like utilities
@@ -47,7 +46,6 @@ Depends:
  ${misc:Depends},
  sysvinit-utils (>= 2.86.ds1-62),
  insserv (>> 1.12.0-10)
- , startpar
 Breaks: initscripts (<< 2.86.ds1-63)
 Description: System-V-like runlevel change mechanism
  This package provides support for the System-V like system
