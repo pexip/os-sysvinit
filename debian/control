@@ -22,7 +22,6 @@ Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/sysvinit.git
 XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
 
 Package: sysvinit-utils
-Essential: yes
 Architecture: any
 Conflicts: last, sysvconfig, chkconfig (<< 11.0-79.1-2), startpar (<< 0.58-2)
 Replaces: last, sysvinit (<= 2.86.ds1-65)
