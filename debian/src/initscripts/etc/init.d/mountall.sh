@@ -10,10 +10,10 @@
 ### END INIT INFO
 
 PATH=/sbin:/bin
+. /lib/lsb/init-functions
 . /lib/init/vars.sh
 . /lib/init/tmpfs.sh
 
-. /lib/lsb/init-functions
 . /lib/init/mount-functions.sh
 . /lib/init/swap-functions.sh
 

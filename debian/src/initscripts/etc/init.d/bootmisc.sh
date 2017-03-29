@@ -10,6 +10,8 @@
 # Description:       Some cleanup.  Note, it need to run after mountnfs-bootclean.sh.
 ### END INIT INFO
 
+. /lib/lsb/init-functions
+
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 [ "$DELAYLOGIN" ] || DELAYLOGIN=yes
 . /lib/init/vars.sh

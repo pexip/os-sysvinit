@@ -13,6 +13,7 @@
 #                    masked by future mounts may be cleaned.
 ### END INIT INFO
 
+. /lib/lsb/init-functions
 . /lib/init/bootclean.sh
 
 case "$1" in

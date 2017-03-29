@@ -21,10 +21,10 @@ TTYMODE=620
 
 KERNEL="$(uname -s)"
 
+. /lib/lsb/init-functions
 . /lib/init/vars.sh
 . /lib/init/tmpfs.sh
 
-. /lib/lsb/init-functions
 . /lib/init/mount-functions.sh
 
 # May be run several times, so must be idempotent.

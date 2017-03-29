@@ -11,6 +11,7 @@
 #                    network filesystems have been mounted.
 ### END INIT INFO
 
+. /lib/lsb/init-functions
 . /lib/init/bootclean.sh
 
 case "$1" in
