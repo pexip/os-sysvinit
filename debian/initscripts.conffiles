@@ -22,4 +22,3 @@
 /etc/default/devpts
 /etc/default/halt
 /etc/default/rcS
-/etc/default/tmpfs
