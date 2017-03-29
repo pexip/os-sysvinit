@@ -10,7 +10,7 @@ Standards-Version: 3.9.1
 Homepage: http://savannah.nongnu.org/projects/sysvinit
 Vcs-Svn: svn://svn.debian.org/pkg-sysvinit/sysvinit/trunk
 Vcs-Browser: http://svn.debian.org/wsvn/pkg-sysvinit/sysvinit/trunk/
-XS-Pexip-Upstream: http://archive.ubuntu.com/ubuntu/ precise
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
 
 Package: sysvinit-utils
 Architecture: any
