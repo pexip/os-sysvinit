@@ -1,6 +1,43 @@
 sysvinit (2.88dsf-59pexip1) pexip; urgency=low
 
   * Migrate to Jessie
+  * Retain the following changes from Ubuntu:
+    - Remove some initscripts (bootlogs, motd, rmnologin) and
+      /etc/network/if-up.d/mountnfs as they have been replaced by upstart jobs
+      shipped in other packages.
+    - debian/control: Drop Essential: yes from sysvinit-utils since we use Upstart.
+    - debian/control: Do not build the sysvinit and sysvinit-core binary
+      packages. We don't want to support sysvinit as such.
+    - Drop /etc/default/tmpfs, and drop mention of it from
+      debian/src/initscripts/man/rcS.5.
+    - Include /lib/lsb/init-functions in various init.d scripts, or move it
+      further to the top, so that they get skipped as there are equivalent
+      upstart jobs.
+    - Fix documentation for other things handled by mountall instead of
+      initscripts: tmpfs, /sys (mountall lets you specify options in
+      /etc/fstab), and ASYNCMOUNTNFS.
+    - debian/src/initscripts/etc/init.d/sendsigs:
+      + sendsigs: OMITPIDS needs to be reinitalized for every loop iteration
+        before concatenating pids of upstart jobs to it.
+      + only omit jobs that are in the 'start' goal or that are in state
+        'stop/killed'. Those that are destined for 'stop' are waited on and
+        killed like all other processes.
+      + disable report_unkillable by default
+      + wait up to 300 extra seconds for upstart jobs that have been killed.
+    - Revert migration of UTC setting from /etc/default/rcS to /etc/adjtime.
+    - init.d/rc: Disable startpar. It wreaks havoc with "task" upstart jobs as 
+      init.d scripts depending on them rely on them to be "running". Drop
+      startpar dependencies.
+    - If /var/run/init.upgraded exists, call telinit u before unmounting
+      the root filesystem.
+    - debian/src/sysv-rc/sbin/invoke-rc.d: tweak behavior of invoke-rc.d when
+      a package has an upstart job without a corresponding init script, and
+      we're running on a non-upstart system, *but* policy-rc.d says to not
+      take the action.  In this case, we want to exit zero instead of
+      non-zero, as this is an important use case when setting up Ubuntu in a
+      chroot.
+    - debian/patches/91_sulogin_lockedpw.dpatch: Disable "root account is
+      locked" warning, since this is the default in Ubuntu.
 
  -- John-Mark Bell <jmb@pexip.com>  Wed, 29 Mar 2017 18:50:37 +0100
 
