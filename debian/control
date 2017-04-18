@@ -10,7 +10,7 @@ XSBC-Pexip-Original-Uploaders:
  Roger Leigh <rleigh@debian.org>,
  Thomas Goirand <zigo@debian.org>
 Build-Depends:
- debhelper (>= 9),
+ debhelper (>= 9.20120410),
  po-debconf,
  quilt (>= 0.40),
  libselinux1-dev (>= 1.14) [linux-any],
