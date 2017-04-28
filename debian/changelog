@@ -39,6 +39,8 @@ sysvinit (2.88dsf-59pexip1) pexip; urgency=low
     - debian/patches/91_sulogin_lockedpw.dpatch: Disable "root account is
       locked" warning, since this is the default in Ubuntu.
     - debian/initscripts.postinst: Migrate to /run/motd.dynamic
+  * debian/src/initscripts/etc/default/rcS: Explicit defaults and
+    enable FSCKFIX
 
  -- John-Mark Bell <jmb@pexip.com>  Wed, 29 Mar 2017 18:50:37 +0100
 
