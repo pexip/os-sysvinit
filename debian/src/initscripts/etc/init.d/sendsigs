@@ -66,6 +66,11 @@ do_stop () {
 		done
 	fi
 
+	# Emit sendsigs so any upstart job waiting for it now stops
+	if [ -x /sbin/initctl ]; then
+		/sbin/initctl --quiet emit sendsigs 2>/dev/null || true
+	fi
+
 	# Flush the kernel I/O buffer before we start to kill
 	# processes, to make sure the IO of already stopped services to
 	# not slow down the remaining processes to a point where they

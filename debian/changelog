@@ -1,3 +1,9 @@
+sysvinit (2.88dsf-59pexip2) pexip; urgency=low
+
+  * debian/src/initscripts/etc/init.d/sendsigs: Emit sendsigs for upstart jobs
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 09 May 2017 01:49:52 +0100
+
 sysvinit (2.88dsf-59pexip1) pexip; urgency=low
 
   * Migrate to Jessie
