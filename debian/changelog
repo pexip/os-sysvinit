@@ -1,3 +1,9 @@
+sysvinit (2.88dsf-59pexip3) pexip; urgency=low
+
+  * debian/initscripts.maintscript: Remove ondemand on upgrade
+
+ -- John-Mark Bell <jmb@pexip.com>  Mon, 05 Jun 2017 15:46:17 +0100
+
 sysvinit (2.88dsf-59pexip2) pexip; urgency=low
 
   * debian/src/initscripts/etc/init.d/sendsigs: Emit sendsigs for upstart jobs
