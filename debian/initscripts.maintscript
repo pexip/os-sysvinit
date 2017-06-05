@@ -2,3 +2,4 @@ rm_conffile /etc/init.d/bootlogd 2.88dsf-42 initscripts
 rm_conffile /etc/init.d/stop-bootlogd-single 2.88dsf-42 initscripts
 rm_conffile /etc/init.d/stop-bootlogd 2.88dsf-42 initscripts
 rm_conffile /etc/init.d/ondemand 2.88dsf-59pexip2 initscripts
+rm_conffile /etc/default/bootlogd 2.88dsf-59pexip3 initscripts

@@ -1,3 +1,9 @@
+sysvinit (2.88dsf-59pexip4) pexip; urgency=low
+
+  * debian/initscripts.maintscript: Remove bootlogd on upgrade
+
+ -- John-Mark Bell <jmb@pexip.com>  Mon, 05 Jun 2017 16:30:37 +0100
+
 sysvinit (2.88dsf-59pexip3) pexip; urgency=low
 
   * debian/initscripts.maintscript: Remove ondemand on upgrade
