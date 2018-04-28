@@ -1,3 +1,9 @@
+sysvinit (2.88dsf-59pexip5) pexip; urgency=low
+
+  * debian/src/initscripts/etc/init.d/sendsigs: Test for upstart
+
+ -- John-Mark Bell <jmb@pexip.com>  Sun, 29 Apr 2018 00:26:20 +0100
+
 sysvinit (2.88dsf-59pexip4) pexip; urgency=low
 
   * debian/initscripts.maintscript: Remove bootlogd on upgrade
