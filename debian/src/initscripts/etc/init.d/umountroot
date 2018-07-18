@@ -16,34 +16,6 @@ PATH=/sbin:/bin
 
 do_stop () {
 	[ "$VERBOSE" = no ] || log_action_begin_msg "Mounting root filesystem read-only"
-	# Ask init to re-exec itself before we go down if it has been
-	# upgraded this cycle.  It'll lose all its state, but at least
-	# it won't hold open files on the root filesystem (lp:#672177).
-	if [ -f /var/run/init.upgraded ]
-	then
-		old_map=$( cat /proc/1/maps )
-		map=$old_map
-		telinit u || :
-		i=0
-		timeout=5
-		while [ "$map" = "$old_map" ]
-		do
-			sleep 1
-			map=$( cat /proc/1/maps )
-			/usr/bin/logger "waiting for init to respawn"
-			i=$((i+1))
-			if [ $i -eq $timeout ] ; then
-				break
-			fi
-		done
-
-		if [ "$map" = "$old_map" ] ; then
-			/usr/bin/logger "FAIL: init failed to respawn in $timeout seconds - unmounting anyway"
-		else
-			/usr/bin/logger "SUCCESS: init respawned after $i seconds (within $timeout seconds timeout)"
-		fi
-	fi
-
 	MOUNT_FORCE_OPT=
 	[ "$(uname -s)" = "GNU/kFreeBSD" ] && MOUNT_FORCE_OPT=-f
 	# This:
