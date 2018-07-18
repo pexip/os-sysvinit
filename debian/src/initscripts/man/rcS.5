@@ -51,27 +51,6 @@ as \fI/run/nologin\fP exists.
 If you set the variable to \fBno\fP then it is advisable to ensure
 that \fI/run/nologin\fP does not exist.
 
-.IP \fBUTC\fP
-This is used to govern how the hardware real time clock is interpreted
-when it is read (e.g., at boot time, for the purpose of setting the
-system clock) and when it is written (e.g., at shutdown).
-If this option is set to \fBno\fP
-then the system clock is assumed to be set to local time.
-If the option is set to \fByes\fP
-then the system clock is assumed to be set to something approximating
-Coordinated Universal Time (UTC).
-(POSIX systems keep a variant of UTC, without leap seconds.)
-
-On contemporary Debian systems
-(although change has been requested at
-\fIhttp://bugs.debian.org/346342\fP),
-if UTC is set to \fBno\fP then \fI/usr/share/zoneinfo\fP
-must be readable early in the boot process.
-If you want to keep \fI/usr\fP on a separate filesystem then
-you must still ensure that the target of \fI/etc/localtime\fP
-points to the correct zone information file for the time zone
-of the time kept in your hardware real time clock.
-
 .IP \fBVERBOSE\fP
 Setting this option to \fBno\fP (in lower case) will make the boot process
 a bit less verbose.
@@ -103,7 +82,13 @@ disable this on machines where the root file system is NFS, until ifup
 from ifupdown works properly in such setup.
 
 .SH NOTE
-The \fBEDITMOTD\fP and \fBRAMRUN\fP variables are no longer used.
+The \fBEDITMOTD\fP, \fBRAMRUN\fP and \fBUTC\fP variables are no longer
+used.  The UTC setting is replaced by the UTC or LOCAL setting in
+/etc/adjtime, and should have been migrated automatically.  See
+.BR hwclock (5)
+and
+.BR hwclock (8)
+for further details on configuring the system clock.
 
 .SH AUTHOR
 Miquel van Smoorenburg <miquels@cistron.nl>
