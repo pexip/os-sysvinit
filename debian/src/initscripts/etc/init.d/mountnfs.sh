@@ -13,9 +13,9 @@
 #                    for them to be mounted before carrying on.
 ### END INIT INFO
 
-. /lib/lsb/init-functions
 . /lib/init/vars.sh
 . /lib/init/mount-functions.sh
+. /lib/lsb/init-functions
 
 do_wait_async_mount() {
 	# Read through fstab line by line. If it is NFS, set the flag
