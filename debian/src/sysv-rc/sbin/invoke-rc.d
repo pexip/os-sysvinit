@@ -282,13 +282,7 @@ elif test ! -f "${INITDPREFIX}${INITSCRIPTID}" ; then
     ## Verifies if the given initscript ID is known
     ## For sysvinit, this error is critical
     printerror unknown initscript, ${INITDPREFIX}${INITSCRIPTID} not found.
-    if [ ! -e "/etc/init/${INITSCRIPTID}.conf" ]; then
-	# If the init script doesn't exist, but the upstart job does, we
-	# defer the error exit; we might be running in a chroot and
-	# policy-rc.d might say not to start the job anyway, in which case
-	# we don't want to exit non-zero.
-	exit 100
-    fi
+    exit 100
 fi
 
 ## Queries sysvinit for the current runlevel
@@ -424,18 +418,6 @@ if [ "$_executable" = "1" ]; then
     	       fi
            fi
            ;;
-    esac
-elif [ -z "$is_upstart" ] && test ! -f "${INITDPREFIX}${INITSCRIPTID}" ; then
-    # call policy layer.  If the policy denies the execution, pass it on.
-    # otherwise, if the policy *allows* the execution, there's a
-    # misconfiguration somewhere and we throw an error.
-    querypolicy
-    case $RC in
-        101)
-          ;;
-        *)
-          exit 100
-          ;;
     esac
 else
     ###
