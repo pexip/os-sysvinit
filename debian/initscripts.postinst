@@ -195,31 +195,6 @@ do
 done
 
 #
-# Revert motd stuff.  initscripts now lets pam_motd handle
-# everything.  /etc/motd is just a regular file.
-#
-if dpkg --compare-versions "$PREV_VER" lt "2.88dsf-24" ; then
-    if [ -L /etc/motd ] && [ "$(readlink /etc/motd)" = "/var/run/motd"  ]; then
-	rm /etc/motd
-	if [ -f /etc/motd.tail ]; then
-	    # Move motd.tail back to motd.
-	    mv /etc/motd.tail /etc/motd
-	fi
-    fi
-    if [ ! -e /run/motd.dynamic ]; then
-	rm -f /run/motd.dynamic
-	if [ -e /run/motd ]; then
-	    mv /run/motd /run/motd.dynamic
-	else
-	    echo "Generating /run/motd.dynamic; this may take a moment..."
-	    run-parts --lsbsysinit /etc/update-motd.d > /run/motd.dynamic.new
-	    mv /run/motd.dynamic.new /run/motd.dynamic
-	fi
-    fi
-    rm -f /var/run/motd
-fi
-
-#
 # Create /dev/pts, /dev/shm directories
 #
 if [ "$(uname -s)" = Linux ]
