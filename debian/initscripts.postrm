@@ -46,7 +46,10 @@ case "$1" in
 
 	# Remove rc symlinks in the reverse dependency order they were
 	# inserted
+	update-rc.d rmnologin              remove >/dev/null || exit $?
 	update-rc.d rc.local               remove >/dev/null || exit $?
+	update-rc.d motd                   remove >/dev/null || exit $?
+	update-rc.d bootlogs               remove >/dev/null || exit $?
 	update-rc.d single                 remove >/dev/null || exit $?
 	update-rc.d killprocs              remove >/dev/null || exit $?
 	update-rc.d sendsigs               remove >/dev/null || exit $?

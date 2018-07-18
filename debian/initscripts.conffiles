@@ -1,3 +1,4 @@
+/etc/init.d/bootlogs
 /etc/init.d/bootmisc.sh
 /etc/init.d/checkfs.sh
 /etc/init.d/checkroot.sh
@@ -5,6 +6,7 @@
 /etc/init.d/halt
 /etc/init.d/hostname.sh
 /etc/init.d/killprocs
+/etc/init.d/motd
 /etc/init.d/mountall.sh
 /etc/init.d/mountall-bootclean.sh
 /etc/init.d/mountnfs.sh
@@ -13,6 +15,7 @@
 /etc/init.d/mountkernfs.sh
 /etc/init.d/rc.local
 /etc/init.d/reboot
+/etc/init.d/rmnologin
 /etc/init.d/sendsigs
 /etc/init.d/single
 /etc/init.d/umountfs
@@ -23,3 +26,4 @@
 /etc/default/halt
 /etc/default/rcS
 /etc/default/tmpfs
+/etc/network/if-up.d/mountnfs
