@@ -95,6 +95,13 @@ to be run with the \fB\-y\fP option instead of the \fB\-a\fP option.
 This will tell fsck always to repair the file systems
 without asking for permission.
 
+.IP \fBASYNCMOUNTNFS\fP
+Set this to 'no' to disable asynchronous mounting of network drives
+when the network interfaces are mounted, and instead do it only once
+when the machine boots.  The default is 'yes'.  It is useful to
+disable this on machines where the root file system is NFS, until ifup
+from ifupdown works properly in such setup.
+
 .SH NOTE
 The \fBEDITMOTD\fP and \fBRAMRUN\fP variables are no longer used.
 
