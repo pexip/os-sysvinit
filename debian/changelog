@@ -1,6 +1,7 @@
 sysvinit (2.88dsf-59.9pexip1) pexip; urgency=medium
 
   * Migrate to Stretch
+  * Drop all local changes
 
  -- John-Mark Bell <jmb@pexip.com>  Wed, 18 Jul 2018 17:23:05 +0100
 
