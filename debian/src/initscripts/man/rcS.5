@@ -86,14 +86,7 @@ from ifupdown works properly in such setup.
 
 .SH NOTE
 The \fBEDITMOTD\fP, \fBRAMRUN\fP and \fBUTC\fP variables are no longer
-used.  The \fBRAMLOCK\fP, \fBRAMSHM\fP and \fBRAMTMP\fP variables have
-been moved to /etc/default/tmpfs; RAMSHM and RAMTMP settings in rcS
-are used (if set) for backward compatibility, but will be overridden
-by settings enabled in /etc/default/tmpfs.  See
-.BR tmpfs (5)
-for further details.  The settings are not automatically migrated to
-/etc/default/tmpfs.  Please update /etc/default/tmpfs appropriately.
-The UTC setting is replaced by the UTC or LOCAL setting in
+used.  The UTC setting is replaced by the UTC or LOCAL setting in
 /etc/adjtime, and should have been migrated automatically.  See
 .BR hwclock (5)
 and
@@ -112,4 +105,3 @@ Roger Leigh <rleigh@debian.org>
 .BR init (8),
 .BR inittab (5),
 .BR login (1),
-.BR tmpfs (5).

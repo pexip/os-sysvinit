@@ -25,5 +25,4 @@
 /etc/default/devpts
 /etc/default/halt
 /etc/default/rcS
-/etc/default/tmpfs
 /etc/network/if-up.d/mountnfs
