@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: sysvinit 2.88dsf-13.1\n"
 "Report-Msgid-Bugs-To: sysvinit@packages.debian.org\n"
-"POT-Creation-Date: 2012-09-29 13:56-0400\n"
+"POT-Creation-Date: 2018-10-26 08:14+0000\n"
 "PO-Revision-Date: 2012-06-12 18:14+0100\n"
 "Last-Translator: Innocent De Marchi <tangram.peces@gmail.com>\n"
 "Language-Team: Catalan <debian-l10n-catalan@lists.debian.org>\n"
@@ -19,54 +19,72 @@ msgstr ""
 "X-Poedit-Language: Catalan\n"
 "X-Poedit-Country: SPAIN\n"
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
-msgid "Unable to migrate to dependency-based boot system"
+#: ../sysvinit-core.templates:1001
+msgid "Update getty pathnames and add hurd-console?"
 msgstr ""
-"No ha estat possible migrar al sistema d'arrencada basat en dependències"
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
+#: ../sysvinit-core.templates:1001
 msgid ""
-"Problems in the boot system exist which are preventing migration to "
-"dependency-based boot sequencing:"
+"Your /etc/inittab seems to use /libexec/getty as getty and/or to miss hurd-"
+"console entry. The default inittab has been changed, however your /etc/"
+"inittab has been modified. Note that sysvinit has not been used to boot an "
+"Hurd system for long, so any errors in that file would not have shown up "
+"earlier."
 msgstr ""
-"Existeixen els següents problemes en el sistema d'arrencada, que impedeixen "
-"la migració a la seqüència d'engegada basada en dependències:"
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
+#: ../sysvinit-core.templates:1001
 msgid ""
-"If the reported problem is a local modification, it needs to be fixed "
-"manually.  These are typically due to obsolete conffiles being left after a "
-"package has been removed, but not purged.  It is suggested that these are "
-"removed by running:"
+"If you allow this change, a backup will be stored in /etc/inittab.dpkg-old."
 msgstr ""
-"Si el problema comunicat és una modificació local, cal solucionar-ho "
-"manualment. Aquests problemes solen ser a causa de fitxers de configuració "
-"obsolets que no s'han eliminat després de la eliminació d'un paquet, sense "
-"haver-ho purgat. Es suggereix que s'eliminin executant:"
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
-msgid "${SUGGESTION}"
-msgstr "${SUGGESTION}"
-
-#. Type: note
-#. Description
-#: ../sysv-rc.templates:1001
+#: ../sysvinit-core.templates:1001
 msgid ""
-"Package installation can not continue until the above problems have been "
-"fixed.  To reattempt the migration process after these problems have been "
-"fixed, run \"dpkg --configure sysv-rc\"."
+"If you don't allow this change, an updated inittab will be written to /etc/"
+"inittab.dpkg-new. Please review the changes and update your /etc/inittab "
+"accordingly."
 msgstr ""
-"La instal·lació del paquet no pot continuar fins que no es solucionin els "
-"problemes llistats. Per tornar a intentar el proces de migració, una vegada "
-"solucionats els problemes, executeu «dpkg --configure sysv-rc»."
+
+#~ msgid "Unable to migrate to dependency-based boot system"
+#~ msgstr ""
+#~ "No ha estat possible migrar al sistema d'arrencada basat en dependències"
+
+#~ msgid ""
+#~ "Problems in the boot system exist which are preventing migration to "
+#~ "dependency-based boot sequencing:"
+#~ msgstr ""
+#~ "Existeixen els següents problemes en el sistema d'arrencada, que "
+#~ "impedeixen la migració a la seqüència d'engegada basada en dependències:"
+
+#~ msgid ""
+#~ "If the reported problem is a local modification, it needs to be fixed "
+#~ "manually.  These are typically due to obsolete conffiles being left after "
+#~ "a package has been removed, but not purged.  It is suggested that these "
+#~ "are removed by running:"
+#~ msgstr ""
+#~ "Si el problema comunicat és una modificació local, cal solucionar-ho "
+#~ "manualment. Aquests problemes solen ser a causa de fitxers de "
+#~ "configuració obsolets que no s'han eliminat després de la eliminació d'un "
+#~ "paquet, sense haver-ho purgat. Es suggereix que s'eliminin executant:"
+
+#~ msgid "${SUGGESTION}"
+#~ msgstr "${SUGGESTION}"
+
+#~ msgid ""
+#~ "Package installation can not continue until the above problems have been "
+#~ "fixed.  To reattempt the migration process after these problems have been "
+#~ "fixed, run \"dpkg --configure sysv-rc\"."
+#~ msgstr ""
+#~ "La instal·lació del paquet no pot continuar fins que no es solucionin els "
+#~ "problemes llistats. Per tornar a intentar el proces de migració, una "
+#~ "vegada solucionats els problemes, executeu «dpkg --configure sysv-rc»."
 
 #~ msgid "Migrate legacy boot sequencing to dependency-based sequencing?"
 #~ msgstr ""

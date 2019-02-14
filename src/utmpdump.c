@@ -128,11 +128,21 @@ unspace(char *s, int len)
 void
 print_utline(struct utmp ut)
 {
-	char *addr_string, *time_string;
-	struct in_addr in;
+	char addr_buf[INET6_ADDRSTRLEN+1];
+	const char *addr_string, *time_string;
+	void *in_addr = &ut.ut_addr_v6;
+	size_t addr_length = INET6_ADDRSTRLEN;
+	int addr_family = AF_INET6;
 
-	in.s_addr = ut.ut_addr;
-	addr_string = inet_ntoa(in);
+	if (!ut.ut_addr_v6[1] && !ut.ut_addr_v6[2] && !ut.ut_addr_v6[3]) {
+		addr_family = AF_INET;
+		addr_length = INET_ADDRSTRLEN;
+		in_addr = &ut.ut_addr;
+	}
+	if ((addr_string = inet_ntop(addr_family, in_addr, addr_buf, addr_length)) == 0) {
+		addr_buf[0] = '\0';
+		addr_string = &addr_buf[0];
+	}
 	time_string = timetostr(ut.ut_time);
 	cleanse(ut.ut_id);
 	cleanse(ut.ut_user);
@@ -208,16 +218,15 @@ undump(FILE *fp, int forever, int oldfmt)
 {
 	struct utmp ut;
 	struct oldutmp uto;
-	char s_addr[16], s_time[29], *linestart, *line;
-	int count = 0;
+	char s_addr[16], s_time[29], *linestart;
 
-	line = linestart = malloc(1024 * sizeof *linestart);
+	linestart = malloc(1024 * sizeof *linestart);
 	s_addr[15] = 0;
 	s_time[28] = 0;
 
 	while(fgets(linestart, 1023, fp))
 	{
-		line = linestart;
+		char *line = linestart;
                 memset(&ut, '\0', sizeof(ut));
                 sscanf(line, "[%hd] [%d] [%4c] ", &ut.ut_type, &ut.ut_pid, ut.ut_id);
 
@@ -227,6 +236,7 @@ undump(FILE *fp, int forever, int oldfmt)
                 line += gettok(line, ut.ut_host, sizeof(ut.ut_host), 1);
 		line += gettok(line, s_addr, sizeof(s_addr)-1, 1);
 		line += gettok(line, s_time, sizeof(s_time)-1, 0);
+		(void)line; /* Quiet down static source analyzers */
 
                 ut.ut_addr = inet_addr(s_addr);
                 ut.ut_time = strtotime(s_time);
@@ -237,7 +247,6 @@ undump(FILE *fp, int forever, int oldfmt)
                 } else
                         fwrite(&ut, sizeof(ut), 1, stdout);
 
-		++count;
 	}
 
 	free(linestart);

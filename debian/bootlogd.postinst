@@ -1,15 +1,21 @@
 #!/bin/sh
 set -e
 
-if [ -x /etc/init.d/bootlogd ]; then
-    update-rc.d bootlogd             defaults >/dev/null || exit $?
-fi
-if [ -x /etc/init.d/stop-bootlogd-single ]; then
-    update-rc.d stop-bootlogd-single defaults >/dev/null || exit $?
-fi
-if [ -x /etc/init.d/stop-bootlogd ]; then
-    update-rc.d stop-bootlogd        defaults >/dev/null || exit $?
-fi
+INITSCRIPTS="bootlogd stop-bootlogd-single stop-bootlogd"
+
+for F in $INITSCRIPTS; do
+	if [ -x /etc/init.d/$F ]; then
+		update-rc.d $F defaults >/dev/null || exit $?
+	fi
+done
+
+mkdir -p /etc/systemd/system
+for F in $INITSCRIPTS; do
+	SERVICE="$(basename $F .sh).service"
+	if [ -x /etc/init.d/$F ] && [ ! -e /etc/systemd/system/$SERVICE ]; then
+		ln -s /dev/null /etc/systemd/system/$SERVICE
+	fi
+done
 
 #
 # Create initial log files

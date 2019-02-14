@@ -29,7 +29,7 @@ This is a simple example on how init-d-script can be used to start and
 stop a daemon with PID file support:
 .P
 .EX
-#!/lib/init/init-d-script
+#!/usr/bin/env /lib/init/init-d-script
 ### BEGIN INIT INFO
 # Provides:          atd
 # Required-Start:    $syslog $time $remote_fs
@@ -44,7 +44,7 @@ DAEMON=/usr/sbin/atd
 .EE
 .P
 In addition to the DAEMON setting, one can specify DESC, NAME,
-PIDFILE (none means no PID file), or implement override functions
+PIDFILE (`none' means no PID file), or implement override functions
 do_force_reload_override, do_reload_override, do_restart_override,
 do_start_override, do_start_cmd_override, do_start_prepare,
 do_start_cleanup do_status_override, do_stop_override,

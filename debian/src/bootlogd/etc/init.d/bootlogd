@@ -77,17 +77,17 @@ case "$ACTION" in
 		# bootlogd writes to boot, making backup at boot~
 		cd /var/log && {
 			chgrp adm boot || :
-			savelog -q -p -c 5 boot \
-			&& mv boot.0 boot \
-			&& mv boot~ boot.0
+			savelog -q -p -c 5 boot &&
+			    mv boot.0 boot      &&
+			    mv boot~ boot.0
 		}
 		ES=$?
 		[ "$VERBOSE" = no ] || log_action_end_msg $ES
 	fi
 	;;
   restart|force-reload)
- 	/etc/init.d/bootlogd stop
- 	/etc/init.d/bootlogd start
+	"$0" stop
+	"$0" start
 	;;
   status)
 	status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?

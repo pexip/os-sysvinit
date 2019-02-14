@@ -1,52 +1,48 @@
-This is the Debian GNU/Linux prepackaged version of System V Init.
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: sysvinit
+Upstream-Contact: sysvinit-devel@nongnu.org
+Source: https://download.savannah.gnu.org/releases/sysvinit/
 
-Init was written by Miquel van Smoorenburg <miquels@cistron.nl>.
+Files: *
+Copyright: 1997-2005 Miquel van Smoorenburg <miquels@cistron.nl>
+License: GPL-2+
 
-This package was first put together by Bruce Perens <Bruce@Pixar.com>
-from pre-distribution sources. Ian Murdock <imurdock@debian.org>
-integrated it into the base system maintained it until the end of 1995.
-Miquel van Smoorenburg <miquels@cistron.nl> implemented Debian support.
-In version 2.85 the package was split into three (sysvinit, sysv-rc,
-and initscripts) in order to make room for alternative rc mechanisms.
+Files: debian/*
+License: GPL-2+
+Copyright: 2015      Adam Conrad <adconrad@debian.org>
+           2018      Dmitry Bogatov <KAction@gnu.org>
+           2018      Vincenzo (KatolaZ) Nicosia <katolaz@freaknet.org>
+           2006      Henrique de Moraes Holschuh <hmh@debian.org>
+           2017      Ian Jackson <ijackson@chiark.greenend.org.uk>
+           2014      Petter Reinholdtsen <pere@debian.org>
+           2014      Robert Millan <rmh@debian.org>
+           2014      Thomas Goirand <zigo@debian.org>
+           2006      Thomas Hood <jdthood@yahoo.co.uk>
+           2015-2016 Andreas Henriksson <andreas@fatal.se>
+           2011,2016 Ben Hutchings <ben@decadent.org.uk>
+           2010-2012 Christian Perrier <bubulle@debian.org>
+           2015-2016 Martin Pitt <mpitt@debian.org>
+           2014-2018 Michael Biebl <biebl@debian.org>
+           1996-2004 Miquel van Smoorenburg <miquels@cistron.nl>
+           2005-2006 Petter Reinholdtsen <pere@debian.org>
+           2006-2010 Petter Reinholdtsen <pere@debian.org>
+           2011-2013 Roger Leigh <rleigh@debian.org>
+           2006-2007 Steinar H. Gunderson <sesse@debian.org>
+           2012-2013 Steve Langasek <vorlon@debian.org>
 
-The upstream source is available at:
-
-Primary-Site:   ftp.cistron.nl /pub/people/miquels/software
-                92K sysvinit-2.86.tar.gz
-Alternate-Site: sunsite.unc.edu /pub/Linux/system/daemons/init
-                92K sysvinit-2.86.tar.gz
-
-Send patches to sysvinit-devel@nongnu.org.
-
-The sysvinit package in Debian is maintained as an alioth project.
-The project page is http://alioth.debian.org/projects/pkg-sysvinit/.
-
-Copyright 1997-2005 Miquel van Smoorenburg <miquels@cistron.nl> and
-the members pkg-sysvinit project.
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-    02110-1301 USA
-
-On Debian GNU/Linux systems, the complete text of the GNU General
-Public License can be found in `/usr/share/common-licenses/GPL-2'.
-
-The of the start-stop-daemon:
-
- * A rewrite of the original Debian's start-stop-daemon Perl script
- * in C (faster - it is executed many times during system startup).
- *
- * Written by Marek Michalkiewicz <marekm@i17linuxb.ists.pwr.wroc.pl>,
- * public domain.
-
+License: GPL-2+
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian system, copy of GNU Lesser General Public License version 2
+ is also located at `/usr/share/common-licenses/GPL-2'
