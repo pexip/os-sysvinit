@@ -6,9 +6,15 @@
  *		  telinit [0123456SsQqAaBbCc]
  *
  * Version:	@(#)init.c  2.86  30-Jul-2004  miquels@cistron.nl
+ * Version:     init.c 2.90 18-Jun-2018 jsmith@resonatingmedia.com
  */
-#define VERSION "2.88"
-#define DATE    "26-Mar-2010"
+
+/*
+Version information is not placed in the top-level Makefile by default
+*/
+#ifndef VERSION
+#define VERSION "2.91"
+#endif
 /*
  *		This file is part of the sysvinit suite,
  *		Copyright (C) 1991-2004 Miquel van Smoorenburg.
@@ -49,15 +55,12 @@
 #include <utmp.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <sys/ttydefaults.h>
 #include <sys/syslog.h>
 #include <sys/time.h>
 
 #ifdef WITH_SELINUX
 #  include <selinux/selinux.h>
-#  include <sys/mount.h>
-#  ifndef MNT_DETACH /* present in glibc 2.10, missing in 2.7 */
-#    define MNT_DETACH 2
-#  endif
 #endif
 
 #ifdef __i386__
@@ -77,6 +80,7 @@
 #include "initreq.h"
 #include "paths.h"
 #include "reboot.h"
+#include "runlevellog.h"
 #include "set.h"
 
 #ifndef SIGPWR
@@ -93,6 +97,7 @@
 /* Set a signal handler. */
 #define SETSIG(sa, sig, fun, flags) \
 		do { \
+			memset(&sa, 0, sizeof(sa)); \
 			sa.sa_handler = fun; \
 			sa.sa_flags = flags; \
 			sigemptyset(&sa.sa_mask); \
@@ -100,7 +105,7 @@
 		} while(0)
 
 /* Version information */
-char *Version = "@(#) init " VERSION "  " DATE "  miquels@cistron.nl";
+char *Version = "@(#) init " VERSION " miquels@cistron.nl";
 char *bootmsg = "version " VERSION " %s";
 #define E_VERSION "INIT_VERSION=sysvinit-" VERSION
 
@@ -128,12 +133,12 @@ int wrote_wtmp_reboot = 1;	/* Set when we wrote the reboot record */
 int wrote_utmp_reboot = 1;	/* Set when we wrote the reboot record */
 int wrote_wtmp_rlevel = 1;	/* Set when we wrote the runlevel record */
 int wrote_utmp_rlevel = 1;	/* Set when we wrote the runlevel record */
-int sltime = 5;			/* Sleep time between TERM and KILL */
+int sltime = WAIT_BETWEEN_SIGNALS;    /* Sleep time between TERM and KILL */
 char *argv0;			/* First arguments; show up in ps listing */
 int maxproclen;			/* Maximal length of argv[0] with \0 */
 struct utmp utproto;		/* Only used for sizeof(utproto.ut_id) */
 char *console_dev;		/* Console device. */
-int pipe_fd = -1;		/* /dev/initctl */
+int pipe_fd = -1;		/* /run/initctl */
 int did_boot = 0;		/* Did we already do BOOT* stuff? */
 int main(int, char **);
 
@@ -251,7 +256,7 @@ void *imalloc(size_t size)
 }
 
 static
-char *istrdup(char *s)
+char *istrdup(const char *s)
 {
 	char	*m;
 	int	l;
@@ -310,7 +315,13 @@ void send_state(int fd)
 
 /*
  *	Read a string from a file descriptor.
- *	FIXME: why not use fgets() ?
+ *	Q: why not use fgets() ?
+ *      A: Answer: looked into this. Turns out after all the checks
+ *      required in the fgets() approach (removing newline, read errors, etc)
+ *      the function is longer and takes approximately the same amount of
+ *      time to do one big fgets and checks as it does to do a pile of getcs.
+ *      We don't benefit from switching.
+ *      - Jesse
  */
 static int get_string(char *p, int size, FILE *f)
 {
@@ -364,6 +375,7 @@ static CHILD *get_record(FILE *f)
 	CHILD	*p;
 
 	do {
+		errno = 0;
 		switch (cmd = get_cmd(f)) {
 			case C_END:
 				get_void(f);
@@ -374,34 +386,54 @@ static CHILD *get_record(FILE *f)
 			case C_REC:
 				break;
 			case D_RUNLEVEL:
-				fscanf(f, "%c\n", &runlevel);
+				if (fscanf(f, "%c\n", &runlevel) == EOF && errno != 0) {
+					fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
+				}
 				break;
 			case D_THISLEVEL:
-				fscanf(f, "%c\n", &thislevel);
+				if (fscanf(f, "%c\n", &thislevel) == EOF && errno != 0) {
+					fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
+				}
 				break;
 			case D_PREVLEVEL:
-				fscanf(f, "%c\n", &prevlevel);
+				if (fscanf(f, "%c\n", &prevlevel) == EOF && errno != 0) {
+					fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
+				}
 				break;
 			case D_GOTSIGN:
-				fscanf(f, "%u\n", &got_signals);
+				if (fscanf(f, "%u\n", &got_signals) == EOF && errno != 0) {
+					fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
+				}
 				break;
 			case D_WROTE_WTMP_REBOOT:
-				fscanf(f, "%d\n", &wrote_wtmp_reboot);
+				if (fscanf(f, "%d\n", &wrote_wtmp_reboot) == EOF && errno != 0) {
+					fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
+				}
 				break;
 			case D_WROTE_UTMP_REBOOT:
-				fscanf(f, "%d\n", &wrote_utmp_reboot);
+				if (fscanf(f, "%d\n", &wrote_utmp_reboot) == EOF && errno != 0) {
+					fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
+				}
 				break;
 			case D_SLTIME:
-				fscanf(f, "%d\n", &sltime);
+				if (fscanf(f, "%d\n", &sltime) == EOF && errno != 0) {
+					fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
+				}
 				break;
 			case D_DIDBOOT:
-				fscanf(f, "%d\n", &did_boot);
+				if (fscanf(f, "%d\n", &did_boot) == EOF && errno != 0) {
+					fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
+				}
 				break;
 			case D_WROTE_WTMP_RLEVEL:
-				fscanf(f, "%d\n", &wrote_wtmp_rlevel);
+				if (fscanf(f, "%d\n", &wrote_wtmp_rlevel) == EOF && errno != 0) {
+					fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
+				}
 				break;
 			case D_WROTE_UTMP_RLEVEL:
-				fscanf(f, "%d\n", &wrote_utmp_rlevel);
+				if (fscanf(f, "%d\n", &wrote_utmp_rlevel) == EOF && errno != 0) {
+					fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
+				}
 				break;
 			default:
 				if (cmd > 0 || cmd == C_EOF) {
@@ -420,10 +452,14 @@ static CHILD *get_record(FILE *f)
 			get_void(f);
 			break;
 		case C_PID:
-			fscanf(f, "%d\n", &(p->pid));
+			if (fscanf(f, "%d\n", &(p->pid)) == EOF && errno != 0) {
+				fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
+			}
 			break;
 		case C_EXS:
-			fscanf(f, "%u\n", &(p->exstat));
+			if (fscanf(f, "%u\n", &(p->exstat)) == EOF && errno != 0) {
+				fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
+			}
 			break;
 		case C_LEV:
 			get_string(p->rlevel, sizeof(p->rlevel), f);
@@ -469,8 +505,10 @@ int receive_state(int fd)
 
 	f = fdopen(fd, "r");
 
- 	if (get_cmd(f) != C_VER)
+ 	if (get_cmd(f) != C_VER) {
+		fclose(f);
 		return -1;
+	}
 	get_string(old_version, sizeof(old_version), f);
 	oops_error = 0;
 	for (pp = &family; (*pp = get_record(f)) != NULL; pp = &((*pp)->next))
@@ -663,7 +701,9 @@ void coredump(void)
 	rlim.rlim_cur = RLIM_INFINITY;
 	rlim.rlim_max = RLIM_INFINITY;
 	setrlimit(RLIMIT_CORE, &rlim);
-	chdir("/");
+	if (0 != chdir("/"))
+		initlog(L_VB, "unable to chdir to /: %s",
+			strerror(errno));
 
 	signal(SIGSEGV, SIG_DFL);
 	raise(SIGSEGV);
@@ -751,11 +791,11 @@ void console_stty(void)
 #ifdef __FreeBSD_kernel__
 	/*
 	 * The kernel of FreeBSD expects userland to set TERM.  Usually, we want
-	 * "cons25".  Later, gettys might disagree on this (i.e. we're not using
+	 * "xterm".  Later, gettys might disagree on this (i.e. we're not using
 	 * syscons) but some boot scripts, like /etc/init.d/xserver-xorg, still
 	 * need a non-dumb terminal.
 	 */
-	putenv ("TERM=cons25");
+	putenv ("TERM=xterm");
 #endif
 
 	(void) tcgetattr(fd, &tty);
@@ -770,7 +810,9 @@ void console_stty(void)
 	tty.c_cc[VEOF]	    = CEOF;
 	tty.c_cc[VTIME]	    = 0;
 	tty.c_cc[VMIN]	    = 1;
+#ifdef VSWTC /* not defined on FreeBSD */
 	tty.c_cc[VSWTC]	    = _POSIX_VDISABLE;
+#endif /* VSWTC */
 	tty.c_cc[VSTART]    = CSTART;
 	tty.c_cc[VSTOP]	    = CSTOP;
 	tty.c_cc[VSUSP]	    = CSUSP;
@@ -784,12 +826,13 @@ void console_stty(void)
 	/*
 	 *	Set pre and post processing
 	 */
-	tty.c_iflag = IGNPAR|ICRNL|IXON|IXANY;
-#ifdef IUTF8 /* Not defined on FreeBSD */
-	tty.c_iflag |= IUTF8;
+	tty.c_iflag = IGNPAR|ICRNL|IXON|IXANY
+#ifdef IUTF8	/* Not defined on FreeBSD */
+			| (tty.c_iflag & IUTF8)
 #endif /* IUTF8 */
+		;
 	tty.c_oflag = OPOST|ONLCR;
-	tty.c_lflag = ISIG|ICANON|ECHO|ECHOCTL|ECHOPRT|ECHOKE;
+	tty.c_lflag = ISIG|ICANON|ECHO|ECHOCTL|ECHOE|ECHOKE;
 
 #if defined(SANE_TIO) && (SANE_TIO == 1)
 	/*
@@ -810,6 +853,24 @@ void console_stty(void)
 	(void) close(fd);
 }
 
+static  ssize_t
+safe_write(int fd, const char *buffer, size_t count)
+{
+	ssize_t offset = 0;
+
+	while (count > 0) {
+		ssize_t block = write(fd, &buffer[offset], count);
+
+		if (block < 0 && errno == EINTR)
+			continue;
+		if (block <= 0)
+			return offset ? offset : block;
+		offset += block;
+		count -= block;
+	}
+	return offset;
+}
+
 /*
  *	Print to the system console
  */
@@ -818,7 +879,7 @@ void print(char *s)
 	int fd;
 
 	if ((fd = console_open(O_WRONLY|O_NOCTTY|O_NDELAY)) >= 0) {
-		write(fd, s, strlen(s));
+		safe_write(fd, s, strlen(s));
 		close(fd);
 	}
 }
@@ -862,6 +923,27 @@ void initlog(int loglevel, char *s, ...)
 	}
 }
 
+/*
+ *	Add or replace specific environment value
+ */
+int addnewenv(const char *new, char **curr, int n)
+{
+	size_t nlen = strcspn(new, "=");
+	int i;
+	for (i = 0; i < n; i++) {
+		if (nlen != strcspn(curr[i], "="))
+			continue;
+		if (strncmp (new, curr[i], nlen) == 0)
+			break;
+	}
+	if (i >= n)
+		curr[n++] = istrdup(new);
+	else {
+		free(curr[i]);
+		curr[i] = istrdup(new);
+	}
+	return n;
+}
 
 /*
  *	Build a new environment for execve().
@@ -870,35 +952,40 @@ char **init_buildenv(int child)
 {
 	char		i_lvl[] = "RUNLEVEL=x";
 	char		i_prev[] = "PREVLEVEL=x";
-	char		i_cons[32];
+	char		i_cons[128];
 	char		i_shell[] = "SHELL=" SHELL;
 	char		**e;
 	int		n, i;
 
 	for (n = 0; environ[n]; n++)
 		;
-	n += NR_EXTRA_ENV;
+	n += NR_EXTRA_ENV + 1;	    /* Also room for last NULL */
 	if (child)
 		n += 8;
-	e = calloc(n, sizeof(char *));
+
+	while ((e = (char**)calloc(n, sizeof(char *))) == NULL) {
+		initlog(L_VB, "out of memory");
+		do_sleep(5);
+	}
 
 	for (n = 0; environ[n]; n++)
 		e[n] = istrdup(environ[n]);
 
 	for (i = 0; i < NR_EXTRA_ENV; i++) {
-		if (extra_env[i])
-			e[n++] = istrdup(extra_env[i]);
+		if (extra_env[i] == NULL || *extra_env[i] == '\0')
+			continue;
+		n = addnewenv(extra_env[i], e, n);
 	}
 
 	if (child) {
 		snprintf(i_cons, sizeof(i_cons), "CONSOLE=%s", console_dev);
 		i_lvl[9]   = thislevel;
 		i_prev[10] = prevlevel;
-		e[n++] = istrdup(i_shell);
-		e[n++] = istrdup(i_lvl);
-		e[n++] = istrdup(i_prev);
-		e[n++] = istrdup(i_cons);
-		e[n++] = istrdup(E_VERSION);
+		n = addnewenv(i_shell, e, n);
+		n = addnewenv(i_lvl, e, n);
+		n = addnewenv(i_prev, e, n);
+		n = addnewenv(i_cons, e, n);
+		n = addnewenv(E_VERSION, e, n);
 	}
 
 	e[n++] = NULL;
@@ -1042,7 +1129,11 @@ pid_t spawn(CHILD *ch, int *res)
 		close(0);
 		close(1);
 		close(2);
-		if (pipe_fd >= 0) close(pipe_fd);
+		if (pipe_fd >= 0)
+                {
+                    close(pipe_fd);
+                    pipe_fd = -1;
+                }
 
   		sigprocmask(SIG_SETMASK, &omask, NULL);
 
@@ -1052,17 +1143,25 @@ pid_t spawn(CHILD *ch, int *res)
 		 *	to be its controlling tty.
 		 */
   		if (strchr("*#sS", runlevel) && ch->flags & WAITING) {
+			int ftty;	/* Handler for tty controlling */
 			/*
 			 *	We fork once extra. This is so that we can
 			 *	wait and change the process group and session
 			 *	of the console after exit of the leader.
 			 */
 			setsid();
-			if ((f = console_open(O_RDWR|O_NOCTTY)) >= 0) {
+			if ((ftty = console_open(O_RDWR|O_NOCTTY)) >= 0) {
 				/* Take over controlling tty by force */
-				(void)ioctl(f, TIOCSCTTY, 1);
-  				dup(f);
-  				dup(f);
+				(void)ioctl(ftty, TIOCSCTTY, 1);
+
+				if(dup(ftty) < 0){
+				        initlog(L_VB, "cannot duplicate console fd");
+				}
+				
+				if(dup(ftty) < 0){
+				        initlog(L_VB, "cannot duplicate console fd");
+				}
+
 			}
 
 			/*
@@ -1096,7 +1195,7 @@ pid_t spawn(CHILD *ch, int *res)
 				 *	Small optimization. See if stealing
 				 *	controlling tty back is needed.
 				 */
-				pgrp = tcgetpgrp(f);
+				pgrp = tcgetpgrp(ftty);
 				if (pgrp != getpid())
 					exit(0);
 
@@ -1111,7 +1210,7 @@ pid_t spawn(CHILD *ch, int *res)
 				}
 				if (pid == 0) {
 					setsid();
-					(void)ioctl(f, TIOCSCTTY, 1);
+					(void)ioctl(ftty, TIOCSCTTY, 1);
 					exit(0);
 				}
 				while((rc = waitpid(pid, &st, 0)) != pid)
@@ -1123,15 +1222,23 @@ pid_t spawn(CHILD *ch, int *res)
 			/* Set ioctl settings to default ones */
 			console_stty();
 
-  		} else {
+  		} else { /* parent */
+			int fd;
 			setsid();
-			if ((f = console_open(O_RDWR|O_NOCTTY)) < 0) {
+			if ((fd = console_open(O_RDWR|O_NOCTTY)) < 0) {
 				initlog(L_VB, "open(%s): %s", console_dev,
 					strerror(errno));
-				f = open("/dev/null", O_RDWR);
+				fd = open("/dev/null", O_RDWR);
 			}
-			dup(f);
-			dup(f);
+
+			if(dup(fd) < 0) {
+				initlog(L_VB, "cannot duplicate /dev/null fd");
+			}
+			
+			if(dup(fd) < 0) {
+				initlog(L_VB, "cannot duplicate /dev/null fd");
+			}
+
 		}
 
 		/*
@@ -1147,7 +1254,7 @@ pid_t spawn(CHILD *ch, int *res)
 		 * and expects utmp to be updated already!
 		 *
 		 * Do NOT log if process field starts with '+'
-		 * FIXME: that's for compatibility with *very*
+		 * This is for compatibility with *very*
 		 * old getties - probably it can be taken out.
 		 */
 		if (ch->process[0] != '+')
@@ -1212,11 +1319,13 @@ void startup(CHILD *ch)
 		case POWEROKWAIT:
 		case CTRLALTDEL:
 			if (!(ch->flags & XECUTED)) ch->flags |= WAITING;
+			/* Fall through */
 		case KBREQUEST:
 		case BOOT:
 		case POWERFAIL:
 		case ONCE:
 			if (ch->flags & XECUTED) break;
+                        /* Fall through */
 		case ONDEMAND:
 		case RESPAWN:
   			ch->flags |= RUNNING;
@@ -1225,6 +1334,79 @@ void startup(CHILD *ch)
 	}
 }
 
+#ifdef __linux__
+static
+void check_kernel_console()
+{
+	FILE* fp;
+	char buf[4096];
+	if ((fp = fopen("/proc/cmdline", "r")) == 0) {    
+		return;
+	}    
+	if (fgets(buf, sizeof(buf), fp)) {    
+		char* p = buf;
+           if ( strstr(p, "init.autocon=1") )
+           {
+		while ((p = strstr(p, "console="))) {    
+			char* e;
+			p += strlen("console=");
+			for (e = p; *e; ++e) {
+				switch (*e) {
+					case '-' ... '9':
+					case 'A' ... 'Z':
+					case '_':
+					case 'a' ... 'z':
+						continue;
+				}
+				break;
+			}
+			if (p != e) {
+				CHILD* old;
+				int dup = 0;
+				char id[8] = {0};
+				char dev[32] = {0};
+				strncpy(dev, p, MIN(sizeof(dev), (unsigned)(e-p)));
+				if (!strncmp(dev, "tty", 3))
+					strncpy(id, dev+3, sizeof(id));
+				else
+					strncpy(id, dev, sizeof(id));
+
+				for(old = newFamily; old; old = old->next) {
+					if (!strcmp(old->id, id)) {
+						dup = 1;
+					}
+				}
+				if (!dup) {
+					CHILD* ch = imalloc(sizeof(CHILD));
+					ch->action = RESPAWN;
+					strcpy(ch->id, id);
+					strcpy(ch->rlevel, "2345");
+					sprintf(ch->process, "/sbin/agetty -L -s 115200,38400,9600 %s vt102", dev);
+					ch->next = NULL;
+					for(old = family; old; old = old->next) {
+						if (strcmp(old->id, ch->id) == 0) {
+							old->new = ch;
+							break;
+						}
+					}
+					/* add to end */
+					for(old = newFamily; old; old = old->next) {
+						if (!old->next) {
+							old->next = ch;
+							break;
+						}
+					}
+
+					initlog(L_VB, "added agetty on %s with id %s", dev, id);
+				}
+			}
+		}
+            } 
+	}    
+	fclose(fp);
+	return;
+}
+#endif
 
 /*
  *	Read the inittab file.
@@ -1261,7 +1443,7 @@ void read_inittab(void)
 #endif
 
   /*
-   *	Open INITTAB and real line by line.
+   *	Open INITTAB and read line by line.
    */
   if ((fp = fopen(INITTAB, "r")) == NULL)
 	initlog(L_VB, "No inittab file found");
@@ -1314,7 +1496,7 @@ void read_inittab(void)
 	if (rlevel && strlen(rlevel) > 11)
 		strcpy(err, "rlevel field too long (max 11 characters)");
 	if (process && strlen(process) > 127)
-		strcpy(err, "process field too long");
+		strcpy(err, "process field too long (max 127 characters)");
 	if (action && strlen(action) > 32)
 		strcpy(err, "action field too long");
 	if (err[0] != 0) {
@@ -1437,6 +1619,10 @@ void read_inittab(void)
    */
   if (fp) fclose(fp);
 
+#ifdef __linux__
+  check_kernel_console();
+#endif
+
   /*
    *	Loop through the list of children, and see if they need to
    *	be killed. 
@@ -1498,14 +1684,14 @@ void read_inittab(void)
 		case 0: /* Send TERM signal */
 			if (talk)
 				initlog(L_CO,
-					"Sending processes the TERM signal");
+					"Sending processes configured via /etc/inittab the TERM signal");
 			kill(-(ch->pid), SIGTERM);
 			foundOne = 1;
 			break;
 		case 1: /* Send KILL signal and collect status */
 			if (talk)
 				initlog(L_CO,
-					"Sending processes the KILL signal");
+					"Sending processes configured via /etc/inittab the KILL signal");
 			kill(-(ch->pid), SIGKILL);
 			break;
 	}
@@ -1641,7 +1827,7 @@ void start_if_needed(void)
 		}
 
 		if (delete) {
-			/* FIXME: is this OK? */
+			/* is this OK? */
 			ch->flags &= ~(RUNNING|WAITING);
 			if (!ISPOWER(ch->action) && ch->action != KBREQUEST)
 				ch->flags &= ~XECUTED;
@@ -1670,9 +1856,9 @@ int ask_runlevel(void)
 	if (fd < 0) return('S');
 
 	while(!strchr("0123456789S", lvl)) {
-  		write(fd, prompt, sizeof(prompt) - 1);
-		buf[0] = 0;
-  		read(fd, buf, sizeof(buf));
+		safe_write(fd, prompt, sizeof(prompt) - 1);
+		if (read(fd, buf, sizeof(buf)) <= 0)
+			buf[0] = 0;
   		if (buf[0] != 0 && (buf[1] == '\r' || buf[1] == '\n'))
 			lvl = buf[0];
 		if (islower(lvl)) lvl = toupper(lvl);
@@ -1723,6 +1909,7 @@ int get_init_default(void)
 	/*
 	 *	Log the fact that we have a runlevel now.
 	 */
+        Write_Runlevel_Log(lvl);
 	return lvl;
 }
 
@@ -1838,6 +2025,7 @@ int read_level(int arg)
 	write_utmp_wtmp("runlevel", "~~", foo + 256*runlevel, RUN_LVL, "~");
 	thislevel = foo;
 	prevlevel = runlevel;
+        Write_Runlevel_Log(runlevel);
 	return foo;
 }
 
@@ -1957,12 +2145,15 @@ int make_pipe(int fd)
 {
 	int fds[2];
 
-	pipe(fds);
+	if (pipe(fds)) {
+		initlog(L_VB, "pipe: %m");
+		return -1;
+	}
 	dup2(fds[0], fd);
 	close(fds[0]);
 	fcntl(fds[1], F_SETFD, 1);
 	fcntl(fd, F_SETFD, 0);
-	write(fds[1], Signature, 8);
+	safe_write(fds[1], Signature, 8);
 
 	return fds[1];
 }
@@ -1992,18 +2183,19 @@ void re_exec(void)
 	/*
 	 *	construct a pipe fd --> STATE_PIPE and write a signature
 	 */
-	fd = make_pipe(STATE_PIPE);
+	if ((fd = make_pipe(STATE_PIPE)) < 0) {
+		sigprocmask(SIG_SETMASK, &oldset, NULL);
+		initlog(L_CO, "Attempt to re-exec failed");
+	}
 
-	/* 
-	 * It's a backup day today, so I'm pissed off.  Being a BOFH, however, 
-	 * does have it's advantages...
-	 */
 	fail_cancel();
-	close(pipe_fd);
-	pipe_fd = -1;
+	if (pipe_fd >= 0) 
+          close(pipe_fd);
+   	pipe_fd = -1;
 	DELSET(got_signals, SIGCHLD);
 	DELSET(got_signals, SIGHUP);
 	DELSET(got_signals, SIGUSR1);
+	DELSET(got_signals, SIGUSR2);
 
 	/*
 	 *	That should be cleaned.
@@ -2032,12 +2224,12 @@ void re_exec(void)
 
 	/*
 	 *	We shouldn't be here, something failed. 
-	 *	Bitch, close the state pipe, unblock signals and return.
+	 *	Close the state pipe, unblock signals and return.
 	 */
+	init_freeenv(env);
 	close(fd);
 	close(STATE_PIPE);
 	sigprocmask(SIG_SETMASK, &oldset, NULL);
-	init_freeenv(env);
 	initlog(L_CO, "Attempt to re-exec failed");
 }
 
@@ -2057,7 +2249,7 @@ void redo_utmp_wtmp(void)
 	if ((wrote_wtmp_reboot == 0) || (wrote_utmp_reboot == 0))
 		write_utmp_wtmp("reboot", "~~", 0, BOOT_TIME, "~");
 
-	if ((wrote_wtmp_rlevel == 0) || (wrote_wtmp_rlevel == 0))
+	if ((wrote_wtmp_rlevel == 0) || (wrote_utmp_rlevel == 0))
 		write_utmp_wtmp("runlevel", "~~", thislevel + 256 * prevlevel, RUN_LVL, "~");
 }
 
@@ -2098,6 +2290,7 @@ void fifo_new_level(int level)
 			setproctitle("init [%c]", (int)runlevel);
 		}
 	}
+        Write_Runlevel_Log(runlevel);
 }
 
 
@@ -2109,22 +2302,18 @@ void fifo_new_level(int level)
 static
 void initcmd_setenv(char *data, int size)
 {
-	char		*env, *p, *e, *eq;
-	int		i, sz;
+	char		*env, *p, *e;
+	size_t		sz;
+	int		i, eq;
 
 	e = data + size;
 
 	while (*data && data < e) {
-		eq = NULL;
 		for (p = data; *p && p < e; p++)
-			if (*p == '=') eq = p;
+			;
 		if (*p) break;
 		env = data;
 		data = ++p;
-
-		sz = eq ? (eq - env) : (p - env);
-
-		/*initlog(L_SY, "init_setenv: %s, %s, %d", env, eq, sz);*/
 
 		/*
 		 *	We only allow INIT_* to be set.
@@ -2132,18 +2321,27 @@ void initcmd_setenv(char *data, int size)
 		if (strncmp(env, "INIT_", 5) != 0)
 			continue;
 
+		sz = strcspn(env, "=");
+		eq = (env[sz] == '=');
+
+		/*initlog(L_SY, "init_setenv: %s, %d, %d", env, eq, sz);*/
+
 		/* Free existing vars. */
 		for (i = 0; i < NR_EXTRA_ENV; i++) {
-			if (extra_env[i] == NULL) continue;
-			if (!strncmp(extra_env[i], env, sz) &&
-			    extra_env[i][sz] == '=') {
+			if (extra_env[i] == NULL)
+				continue;
+			if (sz != strcspn(extra_env[i], "="))
+				continue;
+			if (strncmp(extra_env[i], env, sz) == 0) {
 				free(extra_env[i]);
 				extra_env[i] = NULL;
 			}
 		}
 
+		if (eq == 0)
+			continue;
+
 		/* Set new vars if needed. */
-		if (eq == NULL) continue;
 		for (i = 0; i < NR_EXTRA_ENV; i++) {
 			if (extra_env[i] == NULL) {
 				extra_env[i] = istrdup(env);
@@ -2157,12 +2355,6 @@ void initcmd_setenv(char *data, int size)
 /*
  *	Read from the init FIFO. Processes like telnetd and rlogind can
  *	ask us to create login processes on their behalf.
- *
- *	FIXME:	this needs to be finished. NOT that it is buggy, but we need
- *		to add the telnetd/rlogind stuff so people can start using it.
- *		Maybe move to using an AF_UNIX socket so we can use
- *		the 2.2 kernel credential stuff to see who we're talking to.
- *	
  */
 static
 void check_init_fifo(void)
@@ -2175,13 +2367,13 @@ void check_init_fifo(void)
   int			quit = 0;
 
   /*
-   *	First, try to create /dev/initctl if not present.
+   *	First, try to create /run/initctl if not present.
    */
   if (stat(INIT_FIFO, &st2) < 0 && errno == ENOENT)
 	(void)mkfifo(INIT_FIFO, 0600);
 
   /*
-   *	If /dev/initctl is open, stat the file to see if it
+   *	If /run/initctl is open, stat the file to see if it
    *	is still the _same_ inode.
    */
   if (pipe_fd >= 0) {
@@ -2195,9 +2387,10 @@ void check_init_fifo(void)
   }
 
   /*
-   *	Now finally try to open /dev/initctl
+   *	Now finally try to open /run/initctl if pipe_fd is -1
+   *    if it is -2, then we leave it closed
    */
-  if (pipe_fd < 0) {
+  if (pipe_fd == -1) {
 	if ((pipe_fd = open(INIT_FIFO, O_RDWR|O_NONBLOCK)) >= 0) {
 		fstat(pipe_fd, &st);
 		if (!S_ISFIFO(st.st_mode)) {
@@ -2298,7 +2491,7 @@ void check_init_fifo(void)
   /*
    *	We come here if the pipe couldn't be opened.
    */
-  if (pipe_fd < 0) pause();
+  if (pipe_fd == -1) pause();
 
 }
 
@@ -2386,6 +2579,7 @@ void boot_transitions()
 		prevlevel = oldlevel;
 		setproctitle("init [%c]", (int)runlevel);
 	}
+        Write_Runlevel_Log(runlevel);
   }
 }
 
@@ -2407,8 +2601,8 @@ void process_signals()
 	/* See _what_ kind of SIGPWR this is. */
 	pwrstat = 0;
 	if ((fd = open(PWRSTAT, O_RDONLY)) >= 0) {
-		c = 0;
-		read(fd, &c, 1);
+		if (read(fd, &c, 1) != 1)
+			c = 0;
 		pwrstat = c;
 		close(fd);
 		unlink(PWRSTAT);
@@ -2416,8 +2610,8 @@ void process_signals()
 		/* Path changed 2010-03-20.  Look for the old path for a while. */
 		initlog(L_VB, "warning: found obsolete path %s, use %s instead",
 			PWRSTAT_OLD, PWRSTAT);
-		c = 0;
-		read(fd, &c, 1);
+		if (read(fd, &c, 1) != 1)
+			c = 0;
 		pwrstat = c;
 		close(fd);
 		unlink(PWRSTAT_OLD);
@@ -2497,16 +2691,26 @@ void process_signals()
 			setproctitle("init [%c]", (int)runlevel);
 			DELSET(got_signals, SIGHUP);
 		}
+                Write_Runlevel_Log(runlevel);
 	}
   }
   if (ISMEMBER(got_signals, SIGUSR1)) {
 	/*
-	 *	SIGUSR1 means close and reopen /dev/initctl
+	 *	SIGUSR1 means close and reopen /run/initctl
 	 */
 	INITDBG(L_VB, "got SIGUSR1");
-	close(pipe_fd);
+	if (pipe_fd)
+           close(pipe_fd);
 	pipe_fd = -1;
 	DELSET(got_signals, SIGUSR1);
+  }
+  else if (ISMEMBER(got_signals, SIGUSR2)) {
+       /* SIGUSR1 mean close the pipe and leave it closed */
+       INITDBG(L_VB, "got SIGUSR2");
+       if (pipe_fd)
+           close(pipe_fd);
+       pipe_fd = -2;
+       DELSET(got_signals, SIGUSR2);
   }
 }
 
@@ -2534,7 +2738,7 @@ void init_main(void)
 		while((rc = wait(&st)) != f)
 			if (rc < 0 && errno == ECHILD)
 				break;
-		write(1, killmsg, sizeof(killmsg) - 1);
+		safe_write(1, killmsg, sizeof(killmsg) - 1);
 		while(1) pause();
 	}
 #endif
@@ -2566,6 +2770,7 @@ void init_main(void)
   SETSIG(sa, SIGPWR,   signal_handler, 0);
   SETSIG(sa, SIGWINCH, signal_handler, 0);
   SETSIG(sa, SIGUSR1,  signal_handler, 0);
+  SETSIG(sa, SIGUSR2,  signal_handler, 0);
   SETSIG(sa, SIGSTOP,  stop_handler, SA_RESTART);
   SETSIG(sa, SIGTSTP,  stop_handler, SA_RESTART);
   SETSIG(sa, SIGCONT,  cont_handler, SA_RESTART);
@@ -2729,15 +2934,17 @@ int telinit(char *progname, int argc, char **argv)
 		if (!strchr("0123456789SsQqAaBbCcUu", argv[optind][0]))
 			usage(progname);
 		request.cmd = INIT_CMD_RUNLVL;
-		request.runlevel  = env ? 0 : argv[optind][0];
+		request.runlevel  = argv[optind][0];
 		request.sleeptime = sltime;
 	}
 
 	/* Change to the root directory. */
-	chdir("/");
+	if (0 != chdir("/"))
+		initlog(L_VB, "unable to chdir to /: %s",
+			strerror(errno));
 
 	/* Open the fifo and write a command. */
-	/* Make sure we don't hang on opening /dev/initctl */
+	/* Make sure we don't hang on opening /run/initctl */
 	SETSIG(sa, SIGALRM, signal_handler, 0);
 	alarm(3);
 	if ((fd = open(INIT_FIFO, O_WRONLY)) >= 0) {
@@ -2808,8 +3015,14 @@ int main(int argc, char **argv)
 	else
   		p = argv[0];
 
+        if ( (argc == 2) && (! strcmp(argv[1], "--version") ) )
+        {
+           printf("SysV init version: %s\n\n", VERSION);
+           exit(0);
+        }
+
 	/* Common umask */
-	umask(022);
+	umask(umask(077) | 022);
 
 	/* Quick check */
 	if (geteuid() != 0) {
@@ -2869,11 +3082,9 @@ int main(int argc, char **argv)
 
 #ifdef WITH_SELINUX
 	if (getenv("SELINUX_INIT") == NULL) {
-	  const int rc = mount("proc", "/proc", "proc", 0, 0);
-	  if (is_selinux_enabled() > 0) {
-	    putenv("SELINUX_INIT=YES");
-	    if (rc == 0) umount2("/proc", MNT_DETACH);
+         if (is_selinux_enabled() != 1) {
 	    if (selinux_init_load_policy(&enforce) == 0) {
+             putenv("SELINUX_INIT=YES");
 	      execv(myname, argv);
 	    } else {
 	      if (enforce > 0) {
@@ -2884,7 +3095,6 @@ int main(int argc, char **argv)
 	      }
 	    }
 	  }
-	  if (rc == 0) umount2("/proc", MNT_DETACH);
 	}
 #endif  
 	/* Start booting. */

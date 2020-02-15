@@ -57,6 +57,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include "reboot.h"
+#include "runlevellog.h"
 
 char *Version = "@(#)halt  2.86  31-Jul-2004 miquels@cistron.nl";
 char *progname;
@@ -90,11 +91,14 @@ void usage(void)
 /*
  *	See if we were started directly from init.
  *	Get the runlevel from /var/run/utmp or the environment.
+ *      Or the /var/run/runlevel log.
  */
 int get_runlevel(void)
 {
 	struct utmp *ut;
 	char *r;
+        int runlevel, status;
+
 #if RUNLVL_PICKY
 	time_t boottime;
 #endif
@@ -133,6 +137,11 @@ int get_runlevel(void)
 #endif
 	}
 	endutent();
+
+        /* Did not find utmp entry, try to read from log file */
+        status = Read_Runlevel_Log(&runlevel);
+        if (status)
+           return runlevel;
 
 	/* This should not happen but warn the user! */
 	fprintf(stderr, "WARNING: could not determine runlevel"
@@ -239,7 +248,10 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	(void)chdir("/");
+	if (chdir("/")) {
+		fprintf(stderr, "%s: chdir(/): %m\n", progname);
+		exit(1);
+	}
 
 	if (!do_hard && !do_nothing) {
 		/*
@@ -263,7 +275,11 @@ int main(int argc, char **argv)
 
 	if (do_sync) {
 		sync();
-		sleep(2);
+		/* Sync should be fine on its own for making sure data is written.
+                   We probably call shutdown after this anyway to clean up.
+                   -- Jesse
+                sleep(2);
+                */
 	}
 
 	if (do_ifdown)

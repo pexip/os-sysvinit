@@ -96,7 +96,14 @@ static void getuidtty(char **userp, char **ttyp)
 			uidbuf[0] = 0;
 			strncat(uidbuf, pwd->pw_name, sizeof(uidbuf) - 1);
 		} else {
+                        /* Using variable number of data parameters in one
+                        function makes the Clang compiler cry. -- Jesse
 			sprintf(uidbuf, uid ? "uid %d" : "root", (int)uid);
+                        */
+                        if (uid)
+                           sprintf(uidbuf, "uid %d", (int) uid);
+                        else
+                           sprintf(uidbuf, "root");
 		}
 
 		if ((tty = ttyname(0)) != NULL) {
@@ -190,11 +197,11 @@ void wall(const char *text, int remote)
 	
 	if (remote) {
 		snprintf(line, sizeof(line),
-			"\007\r\nRemote broadcast message (%s):\r\n\r\n",
+			"\r\nRemote broadcast message (%s):\r\n\r\n",
 			date);
 	} else {
 		snprintf(line, sizeof(line),
-			"\007\r\nBroadcast message from %s@%s %s(%s):\r\n\r\n",
+			"\r\nBroadcast message from %s@%s %s(%s):\r\n\r\n",
 			user, hostname, tty, date);
 	}
 

@@ -1,5 +1,5 @@
 /*
- * kilall5.c	Kill all processes except processes that have the
+ * killall5.c	Kill all processes except processes that have the
  *		same session id, so that the shell that called us
  *		won't be killed. Typically used in shutdown scripts.
  *
@@ -43,6 +43,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <getopt.h>
+#include <limits.h>
 #include <mntent.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -59,6 +60,14 @@
 
 char *Version = "@(#)killall5 2.86 31-Jul-2004 miquels@cistron.nl";
 
+#ifndef PATH_MAX
+#  ifdef MAXPATHLEN
+#    define PATH_MAX MAXPATHLEN
+#  else
+#    define PATH_MAX 2048
+#  endif
+#endif
+
 #define STATNAMELEN	15
 #define DO_NETFS 2
 #define DO_STAT 1
@@ -66,6 +75,7 @@ char *Version = "@(#)killall5 2.86 31-Jul-2004 miquels@cistron.nl";
 
 /* Info about a process. */
 typedef struct proc {
+	char *pathname;		/* full path to executable        */
 	char *argv0;		/* Name as found out from argv[0] */
 	char *argv0base;	/* `basename argv[1]`		  */
 	char *argv1;		/* Name as found out from argv[1] */
@@ -112,8 +122,8 @@ typedef struct _s_nfs
 	struct _s_nfs *next;	/* Pointer to next struct. */
 	struct _s_nfs *prev;	/* Pointer to previous st. */
 	SHADOW *shadow;		/* Pointer to shadows      */
-	char * name;
 	size_t nlen;
+	char * name;
 } NFS;
 
 /* List of processes. */
@@ -197,8 +207,8 @@ int mount_proc(void)
 		}
 		if (pid == 0) {
 			/* Try a few mount binaries. */
-			execv("/sbin/mount", args);
 			execv("/bin/mount", args);
+			execv("/sbin/mount", args);
 
 			/* Okay, I give up. */
 			nsyslog(LOG_ERR, "cannot execute mount");
@@ -346,7 +356,7 @@ static void clear_mnt(void)
 }
 
 /*
- *     Check if path is ia shadow off a NFS partition.
+ *     Check if path is a shadow off a NFS partition.
  */
 static int shadow(SHADOW *restrict this, const char *restrict name, const size_t nlen)
 {
@@ -367,13 +377,27 @@ out:
 }
 
 /*
+ * Get the maximal number of symlinks to follow.  Use sysconf() on
+ * Hurd where the hardcoded value MAXSYMLINKS is not available.
+ */
+static int maxsymlinks(void)
+{
+	int v = sysconf(_SC_SYMLOOP_MAX);
+#ifdef MAXSYMLINKS
+	if (v == -1)
+		return MAXSYMLINKS;
+#endif
+	return v;
+}
+
+/*
  *     Check path is located on a network based partition.
  */
 int check4nfs(const char * path, char * real)
 {
 	char buf[PATH_MAX+1];
 	const char *curr;
-	int deep = MAXSYMLINKS;
+	int deep = maxsymlinks();
 
 	if (!nlist) return 0;
 
@@ -459,6 +483,8 @@ int readproc(int do_stat)
 	char		*s, *q;
 	unsigned long	startcode, endcode;
 	int		pid, f;
+	ssize_t		len;
+        char            process_status[11];
 
 	/* Open the /proc directory. */
 	if (chdir("/proc") == -1) {
@@ -477,6 +503,7 @@ int readproc(int do_stat)
 		if (p->argv0) free(p->argv0);
 		if (p->argv1) free(p->argv1);
 		if (p->statname) free(p->statname);
+		free(p->pathname);
 		free(p);
 	}
 	plist = NULL;
@@ -496,13 +523,23 @@ int readproc(int do_stat)
 
 		/* Read SID & statname from it. */
 		if ((fp = fopen(path, "r")) != NULL) {
-			buf[0] = 0;
-			fgets(buf, sizeof(buf), fp);
+			size_t len;
+
+			len = fread(buf, sizeof(char), sizeof(buf)-1, fp);
+			buf[len] = '\0';
+
+			if (buf[0] == '\0') {
+				nsyslog(LOG_ERR,
+					"can't read from %s\n", path);
+				fclose(fp);
+				free(p);
+				continue;
+			}
 
 			/* See if name starts with '(' */
 			s = buf;
-			while (*s != ' ') s++;
-			s++;
+			while (*s && *s != ' ') s++;
+			if (*s) s++;
 			if (*s == '(') {
 				/* Read program name. */
 				q = strrchr(buf, ')');
@@ -511,46 +548,72 @@ int readproc(int do_stat)
 					nsyslog(LOG_ERR,
 					"can't get program name from /proc/%s\n",
 						path);
+					fclose(fp);
 					if (p->argv0) free(p->argv0);
 					if (p->argv1) free(p->argv1);
 					if (p->statname) free(p->statname);
+					free(p->pathname);
 					free(p);
 					continue;
 				}
 				s++;
 			} else {
 				q = s;
-				while (*q != ' ') q++;
+				while (*q && *q != ' ') q++;
 			}
-			*q++ = 0;
+			if (*q) *q++ = 0;
 			while (*q == ' ') q++;
 			p->statname = (char *)xmalloc(strlen(s)+1);
 			strcpy(p->statname, s);
 
 			/* Get session, startcode, endcode. */
 			startcode = endcode = 0;
+                        /*
 			if (sscanf(q, 	"%*c %*d %*d %d %*d %*d %*u %*u "
 					"%*u %*u %*u %*u %*u %*d %*d "
 					"%*d %*d %*d %*d %*u %*u %*d "
 					"%*u %lu %lu",
 					&p->sid, &startcode, &endcode) != 3) {
+                        */
+                        if (sscanf(q,   "%10s %*d %*d %d %*d %*d %*u %*u "
+                                        "%*u %*u %*u %*u %*u %*d %*d "
+                                        "%*d %*d %*d %*d %*u %*u %*d "
+                                        "%*u %lu %lu",
+                                        process_status, 
+                                        &p->sid, &startcode, &endcode) != 4) {
+
 				p->sid = 0;
 				nsyslog(LOG_ERR, "can't read sid from %s\n",
 					path);
+				fclose(fp);
 				if (p->argv0) free(p->argv0);
 				if (p->argv1) free(p->argv1);
 				if (p->statname) free(p->statname);
+				free(p->pathname);
 				free(p);
 				continue;
 			}
 			if (startcode == 0 && endcode == 0)
 				p->kernel = 1;
 			fclose(fp);
+                        if ( (strchr(process_status, 'D') != NULL) ||
+                             (strchr(process_status, 'Z') != NULL) ){
+                           /* Ignore zombie processes or processes in
+                              disk sleep, as attempts
+                              to access the stats of these will
+                              sometimes fail. */
+                              if (p->argv0) free(p->argv0);
+                              if (p->argv1) free(p->argv1);
+                              if (p->statname) free(p->statname);
+                             free(p);
+                             continue;
+                        }
 		} else {
 			/* Process disappeared.. */
 			if (p->argv0) free(p->argv0);
 			if (p->argv1) free(p->argv1);
 			if (p->statname) free(p->statname);
+			free(p->pathname);
 			free(p);
 			continue;
 		}
@@ -598,6 +661,7 @@ int readproc(int do_stat)
 			if (p->argv0) free(p->argv0);
 			if (p->argv1) free(p->argv1);
 			if (p->statname) free(p->statname);
+			free(p->pathname);
 			free(p);
 			continue;
 		}
@@ -610,13 +674,47 @@ int readproc(int do_stat)
 		switch (do_stat) {
 		case DO_NETFS:
 			if ((p->nfs = check4nfs(path, buf)))
-				break;
+				goto link;
+                        /* else fall through */
 		case DO_STAT:
-			if (stat(path, &st) != 0)
+			if (stat(path, &st) != 0) {
+				char * ptr;
+
+				len = readlink(path, buf, PATH_MAX);
+				if (len <= 0)
+					break;
+				buf[len] = '\0';
+
+				ptr = strstr(buf, " (deleted)");
+				if (!ptr)
+					break;
+				*ptr = '\0';
+				len -= strlen(" (deleted)");
+
+				if (stat(buf, &st) != 0)
+					break;
+				p->dev = st.st_dev;
+				p->ino = st.st_ino;
+				p->pathname = (char *)xmalloc(len + 1);
+				memcpy(p->pathname, buf, len);
+				p->pathname[len] = '\0';
+
+				/* All done */
 				break;
+			}
+
 			p->dev = st.st_dev;
 			p->ino = st.st_ino;
+
+			/* Fall through */
 		default:
+		link:
+			len = readlink(path, buf, PATH_MAX);
+			if (len > 0) {
+				p->pathname = (char *)xmalloc(len + 1);
+				memcpy(p->pathname, buf, len);
+				p->pathname[len] = '\0';
+			}
 			break;
 		}
 
@@ -687,6 +785,7 @@ PIDQ_HEAD *pidof(char *prog)
 	int		dostat = 0;
 	int		foundone = 0;
 	int		ok = 0;
+	const int	root = (getuid() == 0);
 	char		real[PATH_MAX+1];
 
 	if (! prog)
@@ -734,16 +833,11 @@ PIDQ_HEAD *pidof(char *prog)
 	 * network FS located binaries */
 	if (!foundone && nfs) {
 		for (p = plist; p; p = p->next) {
-			char exe [PATH_MAX+1];
-			char path[PATH_MAX+1];
-			int len;
+			if (!p->pathname)
+				continue;
 			if (!p->nfs)
 				continue;
-			snprintf(exe, sizeof(exe), "/proc/%d/exe", p->pid);
-			if ((len = readlink(exe, path, PATH_MAX)) < 0)
-				    continue;
-			path[len] = '\0';
-			if (strcmp(prog, path) != 0)
+			if (strcmp(prog, p->pathname) != 0)
 				continue;
 			add_pid_to_q(q, p);
 			foundone++;
@@ -752,6 +846,32 @@ PIDQ_HEAD *pidof(char *prog)
 
 	/* If we didn't find a match based on dev/ino, try the name. */
 	if (!foundone) for (p = plist; p; p = p->next) {
+		if (prog[0] == '/') {
+			if (!p->pathname) {
+				if (root)
+					continue;
+				goto fallback; 
+			}
+			if (strcmp(prog, p->pathname)) {
+				int len = strlen(prog);
+				if (strncmp(prog, p->pathname, len))
+				{
+					if (scripts_too)
+						goto fallback;
+					continue;
+				}
+				if (strcmp(" (deleted)", p->pathname + len))
+				{
+					if (scripts_too)
+						goto fallback;
+					continue;
+				}
+			}
+			add_pid_to_q(q, p);
+			continue;
+		}
+
+	fallback:
 		ok = 0;
 
 		/*             matching        nonmatching
@@ -821,6 +941,22 @@ void usage(void)
 	exit(1);
 }
 
+
+void pidof_usage(void)
+{
+   printf("pidof usage: [options] <program-name>\n\n");
+   printf(" -c           Return PIDs with the same root directory\n");
+   printf(" -h           Display this help text\n");
+   printf(" -f <format>  Display PIDs in a given printf-style format\n");
+   printf(" -n           Avoid using stat system function on network shares\n");
+   printf(" -o <pid>     Omit results with a given PID\n");
+   printf(" -q           Quiet mode. Do not display output\n");
+   printf(" -s           Only return one PID\n");
+   printf(" -x           Return PIDs of shells running scritps with a matchign name\n");
+   printf("\n");
+}
+
+
 /* write to syslog file if not open terminal */
 #ifdef __GNUC__
 __attribute__ ((format (printf, 2, 3)))
@@ -845,6 +981,7 @@ void nsyslog(int pri, char *fmt, ...)
 #define PIDOF_SINGLE	0x01
 #define PIDOF_OMIT	0x02
 #define PIDOF_NETFS	0x04
+#define PIDOF_QUIET     0x08
 
 /*
  *	Pidof functionality.
@@ -860,6 +997,7 @@ int main_pidof(int argc, char **argv)
 	int		chroot_check = 0;
 	struct stat	st;
 	char		tmp[512];
+        char            *format = NULL;
 
 	omit = (OMIT*)0;
 	nlist = (NFS*)0;
@@ -868,7 +1006,7 @@ int main_pidof(int argc, char **argv)
 	if ((token = getenv("PIDOF_NETFS")) && (strcmp(token,"no") != 0))
 		flags |= PIDOF_NETFS;
 
-	while ((opt = getopt(argc,argv,"hco:sxn")) != EOF) switch (opt) {
+	while ((opt = getopt(argc,argv,"qhco:f:sxn")) != EOF) switch (opt) {
 		case '?':
 			nsyslog(LOG_ERR,"invalid options on command line!\n");
 			closelog();
@@ -876,6 +1014,12 @@ int main_pidof(int argc, char **argv)
 		case 'c':
 			if (geteuid() == 0) chroot_check = 1;
 			break;
+                case 'h':
+                        pidof_usage();
+                        exit(0);
+                case 'f':
+                        format = optarg;
+                        break;
 		case 'o':
 			here = optarg;
 			while ((token = strsep(&here, ",;:"))) {
@@ -901,6 +1045,9 @@ int main_pidof(int argc, char **argv)
 			}
 			flags |= PIDOF_OMIT;
 			break;
+                case 'q':
+                        flags |= PIDOF_QUIET;
+                        break; 
 		case 's':
 			flags |= PIDOF_SINGLE;
 			break;
@@ -967,15 +1114,26 @@ int main_pidof(int argc, char **argv)
 						continue;
 					}
 				}
-				if (!first)
-					printf(" ");
-				printf("%d", p->pid);
+
+				if ( ~flags & PIDOF_QUIET ) {
+                                    if (format)
+                                       printf(format, p->pid);
+                                    else
+                                    {
+					if (! first)
+						printf(" ");
+					printf("%d", p->pid);
+                                    }
+				}
 				first = 0;
 			}
 		}
 	}
 	if (!first)
+        {
+            if ( ~flags & PIDOF_QUIET ) 
 		printf("\n");
+        }
 
 	clear_mnt();
 

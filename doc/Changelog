@@ -1,3 +1,345 @@
+sysvinit (2.93) released; urgency=low
+
+  [ Jesse Smith ]
+
+    * Fixed typo in pidof which would prevent the -o (omit PID)
+      flag from working.
+      Fixes Debian bug ##913394.
+
+sysvinit (2.92) released; urgency=low
+
+  [ Jesse Smith ]
+
+    * The shutdown and init commands were using different default delays between
+      sending processes SIGTERM and SIGKILL - they were 3 and 5 seconds, respectively.
+      Unified these on 3 seconds, using a new defined value in init.h.
+      Updated shutdown manual page to reflect the change and better explain
+      how -t and -n flags work.
+      Updated the init manual page with the new default value.
+      The updated documentation resolves Debian bug #375274.
+    * Remove PC speaker beep from shutdown process in dowall.c.
+      Closes Debian bug #614893.
+      Patch provided by Andreas Fackler.
+    * Removed unused Version variable from wall.c.
+    * Updated halt/reboot manual page to acknowledge the -i
+      flag may not properly shut down network interfaces if the interface
+      does not have an IP address.
+      Addresses Debian bug #361935.
+    * Applied patch from Daniel Povey which should allow killall5/pidof to
+      avoid locking up if it encounters stopped or zombie processes 
+      due to broken NFS mount points.
+      This should allow Debian bug #719273 to be closed.
+    * Applied patch from Regid Ichira to clarify shutdown command
+      line options. Updated manual page for shutdown.
+      Closes Debian bug #630661.
+    * shutdown command was setting environment variable INIT_HALT to 
+      "POWERDOWN", this should have been "POWEROFF" as specified in the
+      manual page. Fixed code to match manual page and init scripts.
+      Closes Debian bugs #717531 and #590895
+    * Added -l flag to "last" command. When used it allows "last" to
+      display usernames longer than 8 characters long.
+    * Added -q and -Q flags to shutdown command to make the "system is going down"
+      message appear less often. The -q flag causes messages to only appear at the
+      10 minute, 5 minute and x-hour intervals.
+      The -Q flag maintains complete silence up until the final "now" warning.
+    * Mention GRUB as a potential boot loader in init page since LILO is
+      rarely used anymore, outside of Slackware.
+    * Swapped out ECHOPRT for ECHOE in stty settings when init brings up
+      emergency console. Should make backspace-erasing characters work
+      more naturally.
+      Closes Debian bug #402847.
+    * Updated src/Makefile to make sure we build all the software before
+      attempting to install.
+    * Removed typos from pidof manual page and killall5 page.
+      Closes Debian bugs #815839, #905245 and #890478
+    * Added -f <format> option to pidof program to allow printf
+      style formating.
+      Closes Debian bug #571590
+      Thanks to Philipp Marek for the patch.
+    * Added new tool (readbootlog) which will read the /var/log/boot file
+      produced by bootlogd. The output is displayed cleaned up so there
+      are no control characters. This avoids the need to use sed or related
+      tools to try to clean up the contents of the log.
+    * Added manual page for readbootlog program. Updated bootlogd page
+      to reference it. Closes Debian bug #725123.
+    * Updated the shutdown manual page to try to make it more clear
+      where we are talking about an initscript called halt or the halt
+      program. Likewise whether we are talking about the shutdown process
+      or the specific shutdown program.
+      Should address Debian bug #374039.
+    * Added patch from Samuel Thibault to make project compile
+      on Hurd branch of Debian.
+
+
+sysvinit (2.91) world; urgency=low
+
+  [ Jesse Smith ]
+
+    * Adjusted order of compile flags to make it easier for downstream
+      to adjust optimization level. Patch provided by Matias Fonzo.
+      Can now set optimization level in CFLAGS variable.
+    * Added --version command line flag to display current version info.
+      Updated manual page for init.8 to match.
+    * Version information is now fetched and defined by the Makefile.
+      No more need to update the version manually in the init.c source.
+    * The init process now writes the current runlevel to /var/run/runlevel.
+      This information can be read by the "runlevel" command as well as "halt"
+      and "reboot". Having the information logged in /var/run/runlevel as
+      well as the utmp file means systems without utmp (like those running
+      the musl C library) can still check the current runlevel. This is
+      useful when running halt/reboot as these programs want to check the
+      runlevel.
+    * Added patch from Walter Harms which allows pidof to run without
+      displaying output. In this mode pidof simply returns true or false
+      without displaying PID values.
+      Updated manual page with new -q (quiet) mode.
+      Added -h flag for pidof, which was recognized before, but not used.
+      The -h flag now displays brief usage information for pidof.
+    * Added check for kernel parameter init.autocon=1. If this exists, then
+      init will try to open its own console. If not, then any console=
+      parameters will be ignored. This avoids conflicts with native kernel
+      created consoles.
+
+sysvinit (2.90) world; urgency=low
+
+  [ Jesse Smith ]
+    * Updated some comments in init.c to answer questions or
+      remove old notes we no longer need.
+    * Removed unneeded "count" variable in utmpdump.c.
+    * Fixed typo in accidental wrote_wtmp_rlevel == 0 || wrote_wtmp_rlevel 
+      comparison so the latter is wrote_utmp_rlevel.
+    * Simplified logic in mountpoint.c when testing for same device or same inode.
+      Thanks to David Binderman for pointing out the above three issues.
+    * When we run shutdown and then the computer is put to sleep, the
+      shutdown command recognizes time has passed and continues its
+      countdown taking the time lapse into consideration. This prevents
+      longer waits if we slept past the time we should have shutdown.
+      Accurate to the nearest minute.
+      Closes Savannah bug #36279.
+    * Added document article and manual page for the initctl (/run/initctl)
+      named pipe. Makes it easier for people to communicate with and
+      extend communication to init.
+    * Added check that named pipe is open before trying to close it
+      when something goes wrong or we receive SIGUSER1. Avoids potential
+      crash if we receive SIGUSR1 while pipe is not open.
+    * Added new signal handler for SIGUSR2. When init receives SIGUSR2
+      it closes (and leaves closed) the named pipe /run/initctl. This
+      can be used to make sure init does not have any files open. However,
+      it also means we cannot switch run levels or bring down the system.
+      The pipe can be re-opened by sending init the SIGUSR1 signal.
+    * Added "Fall through" comments to some switch statements where multiple
+      approaches are tried in order to prevent warnings from GCC 7 (and newer).
+      (Thanks to Matias Fonzo for this fix.)
+    * Added includes on Linux for sys/sysmacros.h as the old defines in
+      the sys/types.h file will be removed in the future.
+      (Thanks to Matias Fonzo for this fix.)
+    * Removed old LSM file.
+      Added .gitignore files to avoid git tracking object files.
+      Removed old start-stop-daemon from contrib directory.
+      (Patches provided by Guillem Jover.)
+    * Cleaned up most warnings generated by GCC 7 & 8. We still
+      get some from faulty "nonstring" reports, but silencing them on
+      GCC 8 results in more warnings on GCC 7 and Clang, so leaving them
+      for now.
+    * Fixed compile error on Fedora 28 where crypt() will not link due to
+      undocumented dependency change.
+    * Updated Makefile to make sure correct version number and correct
+      version of files are used. Makefile was pulling from master to create
+      tarballs with old version information when trying to create beta
+      snapshot.
+    * Updated version information in init.c
+    * Updated compiler flag from -fstack-protector to -fstack-protector-strong
+      for better protection.
+    * Cleaned up toplevel Makefile so it stops creating unnecessary temporary
+      directories.
+    * Fixed typo in mountpoint.c. Patch provided by Radostin Stoyanov.
+
+
+sysvinit (2.89) world; urgency=low
+
+  [ Jesse Smith ]
+    * Updated mountpoint command with -p flag. The -p flag causes
+      mountpoint to search for circular mount points. For example, if
+      /a/b/c/d is a mount point for /a/b then the former is a valid
+      mount point. This only works on Linux since it uses /proc/mounts.
+      Updated manual page to match. This fix closes Savannah bug #37114.
+    * Removed two sleep calls when we are doing sync anyway to make sure
+      data is being written. Speeds up reboot time by about two seconds.
+    * Fixed Clang compiler warning regarding variable data parameters to sprintf().
+    * Updated top-level Makefile to work with git repo instead of old svn repo.
+    * Removed unused variables and findtty() function in bootlogd
+    * Add checks to return code for fscanf() called in init.c.
+      This mostly just cleans up compiler warnings.
+    * Perform error check on setuid() call as suggested in manual page.
+    * Fix typo in killall5.c
+      Move initscript sample file from "src" to "doc" directory and updated
+      Makefile to match.
+    * Allow multiple console output
+    When booting a kernel with multiple serial console support, or multuiple
+    console arguments ala "console=tty1 console=ttyS0,9600" the kernel will output
+    messages to all consoles, init however will not. It will only send output to,
+    and accept input from, the last of the consoles.
+    This patch fixes it.
+    (Patch provided by Martin Buck.)
+    * Added Patch from Debian developer Mats Erik Andersson to make
+    ioctl work on GNU/kFreeBSD. Patches bootlogd.
+    * Added Robert Millan's Debian patch to set TERM variable to xterm (instead
+    of cons25) when running on GNU/kFreeBSD.
+    * Added Robert Millan's Debian patch to use /run/initctl as the named
+    pipe for communicating. This works around a limitation on the kFreeBSD
+    branch which prevents us from using /dev/initctl for pipes.
+    * Confirmed we have applied Guillem Jover's patch to make
+    ifdown work on FreeBSD.
+    * Confirmed we have Debian patch to fix enabling SELinux.
+    (Credit to Petter Reinholdtsen)
+    * Confirmed we have Debian patch to make sure utf-8 flag is not cleared from tty.
+    (Credit to Samuel Thibault)
+    * Confirmed we have Roger Leigh's Makefile patch to allow building
+    with multiarch libcrypt.
+    * Applied Justus Winter's symlink patch to make sure killall5
+    builds and runs on Hurd.
+    * Confirmed we have Werner Fink's PATH_MAX patch for getting
+    killall5 to build on Hurd.
+    * Made sure we have Petter Reinholdtsen's patch to init.c which
+    allows init to build on GNU/kFreeBSD despite missing VSWTC.
+     * Dropping Debian patch to use /run/nologin instead of /etc/nologin in paths.h.
+    Seems every distribution uses a different location. Oracle uses /etc/nologin,
+    CentOS seems to use /var/run/nologin.
+    We will use /etc/nologin and let distros patch to suit their own preference.
+    * Updated halt.8 man page with corrections from
+    Christoph Anton Mitterer.
+    * Confirmed we have applied patch from Bjarni Ingi Gislason
+    which fixes typo in fstab-decode man page.
+    * Applied Debian patch to allow init to build on GNU Hurd.
+    (Credit: Roger Leigh)
+    * Confirmed we have Debian patch from developer Johannes Truschnigg
+    which informs the user of field size limit.
+    * Applied patch from Debian to the init manual page (init.8)
+    to better address runlevels. (Author unknown)
+    * The pidof command used to discover the correct PID of
+    a process even if the wrong path was given. For example
+    pidof /wrongpath/sleep would find the PID of a command run as "sleep".
+    This bug was reported on Launchpad for Ubuntu and on Savannah.
+    https://bugs.launchpad.net/ubuntu/+source/sysvinit/+bug/1546126
+    http://savannah.nongnu.org/bugs/?47196
+    This bug appears to have been fixed in the development branch,
+    allowing these bugs to be tested/closed.
+    * Confirmed Savannah bug #37114 (mountpoint does not detect
+    mount points using --bind on same file system) still exists,
+    but fixed in Debian and Red Hat.
+    Considering this bug closed since distributions are using
+    util-linux's mountpoint program and ours is no longer
+    built/used by default.
+    Considered importing util-linux mountpoint but that would duplicate
+    effort and pull in a new dependency on libmount.
+    * Problem with pidof breaks after prelink (Savannah bug #34992)
+    fixed. Patch supplied by Dave Dykstra.
+    * Patch to automatically spawn a getty on kernel consoles
+    The feature is useful for developers and admins that occasionally need
+    to boot with e.g. console=ttyS0.
+    The built in default can be overridden via inittab for each device. An
+    entry like "S0::off:" turns off the getty on ttyS0.
+    characters in log file. Also makes parsing easier.
+    This should close Savannah bug report 36528.
+    http://savannah.nongnu.org/bugs/?36528
+    * Applied patches provided in Savannah bug report 49991. Fix tabs in
+    bootlogd and avoid printing unitialized "buf" variable when
+    consolename() fails.
+
+  [ Werner Fink ]
+  * Do not forget room for last NULL of new environment (was
+    local bug 35866)
+  * Handle deleted binaries in pidof (was local bug #34992)
+  * Allow init to delete extra environment variables (was local bug
+    #35858)
+  * Avoid that init double environment variables for its childs
+    (was local bug #35855)
+  * Remove man-db tag for encoding for canonical man
+  * Sulogin: try to detect the real device(s) used for the system console
+    /dev/console if but only if /dev/console is used.  On Linux this can
+    be more than one device, e.g. a serial line as well as a virtual
+    console as well as a simple printer.
+  * Fix counting message lines in wall. Patch from Petr Lautrbach.
+  * Fix bad printf conversion specifier in wall. Patch from Sébastien Luttringer.
+  * Add patches from Openwall project. Thanks goes to Solar Designer.
+  * Add code to detect the system consoles with the help of the
+    new /proc/consoles files of linux kernel 2.6.38+
+  * Try to make utmpdump IPv6 valid, change based on suggestion from
+    Navdeep Bhatia (see local bug #32429)
+  * Fix signal and alarm handling based on the patch from Florent Viard.
+    (was local bug #32304)
+  * Add fix for Redhat bug #573346: last incorrectly displays IPv6
+    addresses (was local bug #29497)
+  * Correct fix for Debian bug #547073: use IUTF8 flag if defined
+    and if already set to make sure the utf-8 flag is not cleared
+    from the tty. Patch from Samuel Thibault.
+  * Include limits.h in killall.c to enforce definition of PATH_MAX
+  * Fix sysvinit bug #29758 Linker invocation should not contain
+    headers. Change based on patch from Elias Pipping.
+  * Add fix for Debian bug #580272: use return value 1 of
+    is_selinux_enabled() to determine if SELinux is enabled,
+    otherwise initialize SELinux and load the policy. Patch from
+    Petter Reinholdtsen.
+  * Make quotes visible in example of the manual page of fstab-decode
+  * Sulogin: enforce reconnection of stdin/stdout/stderr if a device
+    was specified.
+  * Sulogin: if zero is read at reading the passwd guess it's done.
+  * Sulogin: respect byte order that is do not mix chars and ints
+  * Shutdown: use PATH_DEFAULT as suggested by Paul Arthur in local bug #36101
+  * Killall5/pidof: handle strange names of executables (local bug #36252)
+  * Sulogin: be aware the crypt(3) may fail (local bug #36313)
+
+  [ Petter Reinholdtsen ]
+  * Next release will be 2.89dsf.
+  * Add #ifdef in bootlogd.c to avoid gcc warnings about unused
+    variable on non-linux platforms.
+  * Only set the VSWTC field for termios in init if it is available,
+    to get the source building on FreeBSD.
+  * Add some code to be able to detect programs even as user with
+    kernel 3.0 and above
+  * Improve message printed when signaling processes to stop.
+    Patch from Matias A. Fonzo at the dragora project.
+  * Rename internal functions warn() and shutdown() in the shutdown
+    binary to avoid surprising dynamic library name resolution
+    conflict with NSS modules.  Patch from Richard Tollerton.
+  * Try harder to find libcrypt.*, even if there is no static library
+    available.  Also look in /usr/lib/*/ for the library, to handle
+    Debian multiarch systems.  Based on patch from Andrew Gregory.
+  * Adjust included headers to be compatible with the musl C
+    library.  Patch from Matias A. Fonzo and Dragora.
+  * Move dovoid() macro from #ifdef__GLIBC__ to #ifdef __linux__,
+    to match the condutions of the place where it is used.  Thanks
+    to Matias A. Fonzo for noticing.
+  * Define _XOPEN_SOURCE when building to get crypt() from <unistd.h>
+    instead of using <crypt.h> in sulogin.c, to get the source building
+    with the musl C library.
+  * Use sysconf(_SC_SYMLOOP_MAX) instead of MAXSYMLINKS.  If sysconf
+    returns an error, fall back to MAXSYMLINKS on platforms that
+    define it.  Fixes build on Hurd.  Patch from Justus Winter and
+    Debian.
+  * Adjust makefile to make it easier to link all binaries statically.
+    Patch from Matias A. Fonzo and Dragora.
+  * Rewrite findtty() in bootlogd.c to not chance working directory, to
+    reduce the amount of failure that can happin in that function.
+  * Adapt bootlogd TIOCCONS call to kfreebsd.  Patch from Mats Erik
+    Andersson and Debian.
+  * Document length limit for the process field in the inittab.  Patch
+    from Johannes Truschnigg and Debian.
+  * Fix typo in fstab-decode(8) font escape.  Patch from Bjarni Ingi
+    Gislason and Debian.
+  * Port ifdown.c to FreeBSD.  Patch from Guillem Jover and Debian.
+  * Drop dsf part from version number.  It no longer make sense to keep.
+  * Remove obsolete/ directory from tarball.  None of it have been useful
+    for many years.
+  * Make it possible to specify the initctl path as a compile time
+    define INIT_FIFO.
+  * Use narrowly scoped file descriptor for handling opened TTY in
+    spawn().  Patch from Michał Kulling.
+  * Check exit code from dup() in spawn() and log error if it fail.
+    Patch from Michał Kulling.
+
+ -- Petter Reinholdtsen <pere@hungry.com>  Sun Apr 11 11:28:55 CEST 2010
+
 sysvinit (2.88dsf) world; urgency=low
 
   [ Petter Reinholdtsen ]
