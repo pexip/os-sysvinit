@@ -23,7 +23,6 @@ install:
 		$(INSTALL_DATA) rc2-5.d-README \
 			$(DESTDIR)$(sysconfdir)/rc$${N}.d/README ; \
 	done
-	chmod 755 $(DESTDIR)$(sysconfdir)/init.d/[a-z]*
 	chmod 644 $(DESTDIR)$(sysconfdir)/init.d/README
 	chmod -R go=u-w $(DESTDIR)$(sysconfdir)
 	chown -R root:root $(DESTDIR)$(sysconfdir)

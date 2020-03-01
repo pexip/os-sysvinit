@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: sysvinit 2.87dsf-5\n"
 "Report-Msgid-Bugs-To: sysvinit@packages.debian.org\n"
-"POT-Creation-Date: 2012-09-29 13:56-0400\n"
+"POT-Creation-Date: 2018-10-26 08:14+0000\n"
 "PO-Revision-Date: 2009-10-08 23:34+0930\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -17,56 +17,64 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: LocFactoryEditor 1.8\n"
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
-msgid "Unable to migrate to dependency-based boot system"
-msgstr "Không thể nâng cấp lên hệ thống khởi động dựa vào quan hệ phụ thuộc"
+#: ../sysvinit-core.templates:1001
+msgid "Update getty pathnames and add hurd-console?"
+msgstr ""
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
+#: ../sysvinit-core.templates:1001
+msgid ""
+"Your /etc/inittab seems to use /libexec/getty as getty and/or to miss hurd-"
+"console entry. The default inittab has been changed, however your /etc/"
+"inittab has been modified. Note that sysvinit has not been used to boot an "
+"Hurd system for long, so any errors in that file would not have shown up "
+"earlier."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../sysvinit-core.templates:1001
+msgid ""
+"If you allow this change, a backup will be stored in /etc/inittab.dpkg-old."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../sysvinit-core.templates:1001
+msgid ""
+"If you don't allow this change, an updated inittab will be written to /etc/"
+"inittab.dpkg-new. Please review the changes and update your /etc/inittab "
+"accordingly."
+msgstr ""
+
+#~ msgid "Unable to migrate to dependency-based boot system"
+#~ msgstr "Không thể nâng cấp lên hệ thống khởi động dựa vào quan hệ phụ thuộc"
+
 #, fuzzy
-#| msgid ""
-#| "Tests have determined that problems in the boot system exist which "
-#| "prevent migration to dependency-based boot sequencing:"
-msgid ""
-"Problems in the boot system exist which are preventing migration to "
-"dependency-based boot sequencing:"
-msgstr ""
-"Gặp vấn đề trong hệ thống khởi động mà ngăn cản nâng cấp lên thứ tự khởi "
-"động dựa vào quan hệ phụ thuộc:"
+#~| msgid ""
+#~| "Tests have determined that problems in the boot system exist which "
+#~| "prevent migration to dependency-based boot sequencing:"
+#~ msgid ""
+#~ "Problems in the boot system exist which are preventing migration to "
+#~ "dependency-based boot sequencing:"
+#~ msgstr ""
+#~ "Gặp vấn đề trong hệ thống khởi động mà ngăn cản nâng cấp lên thứ tự khởi "
+#~ "động dựa vào quan hệ phụ thuộc:"
 
-#. Type: note
-#. Description
-#: ../sysv-rc.templates:1001
-msgid ""
-"If the reported problem is a local modification, it needs to be fixed "
-"manually.  These are typically due to obsolete conffiles being left after a "
-"package has been removed, but not purged.  It is suggested that these are "
-"removed by running:"
-msgstr ""
-
-#. Type: note
-#. Description
-#: ../sysv-rc.templates:1001
-msgid "${SUGGESTION}"
-msgstr ""
-
-#. Type: note
-#. Description
-#: ../sysv-rc.templates:1001
 #, fuzzy
-#| msgid ""
-#| "To reattempt the migration process after the problems have been fixed, "
-#| "run \"dpkg-reconfigure sysv-rc\"."
-msgid ""
-"Package installation can not continue until the above problems have been "
-"fixed.  To reattempt the migration process after these problems have been "
-"fixed, run \"dpkg --configure sysv-rc\"."
-msgstr ""
-"Để thử lại tiến trình nâng cấp sau khi sửa chữa các vấn đề, hãy chạy « dpkg-"
-"reconfigure sysv-rc »."
+#~| msgid ""
+#~| "To reattempt the migration process after the problems have been fixed, "
+#~| "run \"dpkg-reconfigure sysv-rc\"."
+#~ msgid ""
+#~ "Package installation can not continue until the above problems have been "
+#~ "fixed.  To reattempt the migration process after these problems have been "
+#~ "fixed, run \"dpkg --configure sysv-rc\"."
+#~ msgstr ""
+#~ "Để thử lại tiến trình nâng cấp sau khi sửa chữa các vấn đề, hãy chạy « "
+#~ "dpkg-reconfigure sysv-rc »."
 
 #~ msgid "Migrate legacy boot sequencing to dependency-based sequencing?"
 #~ msgstr ""

@@ -112,10 +112,7 @@ fi
 
 restart=yes
 
-chroot=0
-ischroot || chroot="$?"
-
-if [ "$chroot" != "1" ]; then
+if ischroot --default-true ; then
 	restart=no
 fi
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: sysvinit 2.87dsf\n"
 "Report-Msgid-Bugs-To: sysvinit@packages.debian.org\n"
-"POT-Creation-Date: 2012-09-29 13:56-0400\n"
+"POT-Creation-Date: 2018-10-26 08:14+0000\n"
 "PO-Revision-Date: 2012-06-09 15:26+0100\n"
 "Last-Translator: Miguel Figueiredo <elmig@debianpt.org>\n"
 "Language-Team: Portuguese <l10n@debianpt.org>\n"
@@ -20,53 +20,71 @@ msgstr ""
 "X-Poedit-Country: PORTUGAL\n"
 "X-Poedit-SourceCharset: utf-8\n"
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
-msgid "Unable to migrate to dependency-based boot system"
-msgstr "Incapaz de migrar para sistema de arranque baseado em dependências"
-
-#. Type: note
-#. Description
-#: ../sysv-rc.templates:1001
-msgid ""
-"Problems in the boot system exist which are preventing migration to "
-"dependency-based boot sequencing:"
+#: ../sysvinit-core.templates:1001
+msgid "Update getty pathnames and add hurd-console?"
 msgstr ""
-"Problemas no sistema de arranque que impedem a migração para sequência de "
-"arranque baseada em dependências de arranque:"
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
+#: ../sysvinit-core.templates:1001
 msgid ""
-"If the reported problem is a local modification, it needs to be fixed "
-"manually.  These are typically due to obsolete conffiles being left after a "
-"package has been removed, but not purged.  It is suggested that these are "
-"removed by running:"
+"Your /etc/inittab seems to use /libexec/getty as getty and/or to miss hurd-"
+"console entry. The default inittab has been changed, however your /etc/"
+"inittab has been modified. Note that sysvinit has not been used to boot an "
+"Hurd system for long, so any errors in that file would not have shown up "
+"earlier."
 msgstr ""
-"Se o problema relatado for uma modificação local, tem de ser corrigido "
-"manualmente. Tipicamente são devidos a ficheiros de configuração obsoletos "
-"que ficaram quando um pacote foi removido mas não purgado. É sugerido que "
-"estes sejam removidos ao correr:"
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
-msgid "${SUGGESTION}"
-msgstr "${SUGGESTION}"
-
-#. Type: note
-#. Description
-#: ../sysv-rc.templates:1001
+#: ../sysvinit-core.templates:1001
 msgid ""
-"Package installation can not continue until the above problems have been "
-"fixed.  To reattempt the migration process after these problems have been "
-"fixed, run \"dpkg --configure sysv-rc\"."
+"If you allow this change, a backup will be stored in /etc/inittab.dpkg-old."
 msgstr ""
-"A instalação do pacote não pode continuar até os problemas acima terem sido "
-"corrigidos. Para tentar novamente o processo de migração após a resolução "
-"destes problemas, execute \"dpkg-reconfigure sysv-rc\"."
+
+#. Type: boolean
+#. Description
+#: ../sysvinit-core.templates:1001
+msgid ""
+"If you don't allow this change, an updated inittab will be written to /etc/"
+"inittab.dpkg-new. Please review the changes and update your /etc/inittab "
+"accordingly."
+msgstr ""
+
+#~ msgid "Unable to migrate to dependency-based boot system"
+#~ msgstr "Incapaz de migrar para sistema de arranque baseado em dependências"
+
+#~ msgid ""
+#~ "Problems in the boot system exist which are preventing migration to "
+#~ "dependency-based boot sequencing:"
+#~ msgstr ""
+#~ "Problemas no sistema de arranque que impedem a migração para sequência de "
+#~ "arranque baseada em dependências de arranque:"
+
+#~ msgid ""
+#~ "If the reported problem is a local modification, it needs to be fixed "
+#~ "manually.  These are typically due to obsolete conffiles being left after "
+#~ "a package has been removed, but not purged.  It is suggested that these "
+#~ "are removed by running:"
+#~ msgstr ""
+#~ "Se o problema relatado for uma modificação local, tem de ser corrigido "
+#~ "manualmente. Tipicamente são devidos a ficheiros de configuração "
+#~ "obsoletos que ficaram quando um pacote foi removido mas não purgado. É "
+#~ "sugerido que estes sejam removidos ao correr:"
+
+#~ msgid "${SUGGESTION}"
+#~ msgstr "${SUGGESTION}"
+
+#~ msgid ""
+#~ "Package installation can not continue until the above problems have been "
+#~ "fixed.  To reattempt the migration process after these problems have been "
+#~ "fixed, run \"dpkg --configure sysv-rc\"."
+#~ msgstr ""
+#~ "A instalação do pacote não pode continuar até os problemas acima terem "
+#~ "sido corrigidos. Para tentar novamente o processo de migração após a "
+#~ "resolução destes problemas, execute \"dpkg-reconfigure sysv-rc\"."
 
 #~ msgid "Migrate legacy boot sequencing to dependency-based sequencing?"
 #~ msgstr ""

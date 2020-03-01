@@ -41,6 +41,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#ifdef __linux__
+#include <sys/sysmacros.h>   /* brought in my LFS patch */
+#endif
 #include <time.h>
 #include <string.h>
 #include <errno.h>
@@ -59,9 +62,12 @@
 #include "init.h"
 
 
-char *Version = "@(#) shutdown 2.86-1 31-Jul-2004 miquels@cistron.nl";
-
 #define MESSAGELEN	256
+
+/* Whether we should warn system is shutting down */
+#define QUIET_FULL 2
+#define QUIET_PARTIAL 1
+#define QUIET_NONE 0
 
 int dontshut = 0;	/* Don't shutdown, only warn	*/
 char down_level[2];	/* What runlevel to go to.	*/
@@ -76,7 +82,7 @@ int got_alrm = 0;
 
 char *clean_env[] = {
 	"HOME=/",
-	"PATH=/bin:/usr/bin:/sbin:/usr/sbin",
+	"PATH=" PATH_DEFAULT,
 	"TERM=dumb",
 	"SHELL=/bin/sh",
 	NULL,
@@ -129,11 +135,15 @@ void usage(void)
 	"\t\t  -r:      reboot after shutdown.\n"
 	"\t\t  -h:      halt after shutdown.\n"
 	"\t\t  -P:      halt action is to turn off power.\n"
+        "\t\t           can only be used along with -h flag.\n"
 	"\t\t  -H:      halt action is to just halt.\n"
+        "\t\t           can only be used along with -h flag.\n"
 	"\t\t  -f:      do a 'fast' reboot (skip fsck).\n"
 	"\t\t  -F:      Force fsck on reboot.\n"
 	"\t\t  -n:      do not go through \"init\" but go down real fast.\n"
 	"\t\t  -c:      cancel a running shutdown.\n"
+        "\t\t  -q:      quiet mode - display fewer shutdown warnings.\n"
+        "\t\t  -Q:      full quiet mode - display only final shutdown warning.\n"
 	"\t\t  -t secs: delay between warning and kill signal.\n"
 	"\t\t  ** the \"time\" argument is mandatory! (try \"now\") **\n");
 	exit(1);
@@ -154,7 +164,7 @@ int init_setenv(char *name, char *value)
 	struct init_request	request;
 	struct sigaction	sa;
 	int			fd;
-	int			nl, vl;
+	size_t			nl, vl;
 
 	memset(&request, 0, sizeof(request));
 	request.magic = INIT_MAGIC;
@@ -173,7 +183,7 @@ int init_setenv(char *name, char *value)
 
         /*
 	 *	Open the fifo and write the command.
-         *	Make sure we don't hang on opening /dev/initctl
+         *	Make sure we don't hang on opening /run/initctl
 	 */
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = alrm_handler;
@@ -213,7 +223,7 @@ int init_setenv(char *name, char *value)
 /*
  *	Tell everyone the system is going down in 'mins' minutes.
  */
-void warn(int mins)
+void issue_warn(int mins)
 {
 	char buf[MESSAGELEN + sizeof(newstate)];
 	int len;
@@ -286,7 +296,8 @@ int spawn(int noerr, char *prog, ...)
 	argv[i] = NULL;
 	va_end(ap);
 
-	chdir("/");
+	if (chdir("/"))
+		exit(1);
 	environ = clean_env;
 
 	execvp(argv[0], argv);
@@ -344,7 +355,7 @@ void fastdown()
 	/* Kill all processes. */
 	fprintf(stderr, "shutdown: sending all processes the TERM signal...\r\n");
 	kill(-1, SIGTERM);
-	sleep(sltime ? atoi(sltime) : 3);
+	sleep(sltime ? atoi(sltime) : WAIT_BETWEEN_SIGNALS);
 	fprintf(stderr, "shutdown: sending all processes the KILL signal.\r\n");
 	(void) kill(-1, SIGKILL);
 
@@ -358,7 +369,8 @@ void fastdown()
 #endif
 
 	/* script failed or not present: do it ourself. */
-	sleep(1); /* Give init the chance to collect zombies. */
+	/* Give init the chance to collect zombies. */
+        /* sleep(1); */
 
 	/* Record the fact that we're going down */
 	write_wtmp("shutdown", "~~", 0, RUN_LVL, "~~");
@@ -399,14 +411,14 @@ void fastdown()
 /*
  *	Go to runlevel 0, 1 or 6.
  */
-void shutdown(char *halttype)
+void issue_shutdown(char *halttype)
 {
 	char	*args[8];
 	int	argp = 0;
 	int	do_halt = (down_level[0] == '0');
 
 	/* Warn for the last time */
-	warn(0);
+	issue_warn(0);
 	if (dontshut) {
 		hardsleep(1);
 		stopit(0);
@@ -452,10 +464,23 @@ void shutdown(char *halttype)
 /*
  *	returns if a warning is to be sent for wt
  */
-static int needwarning(int wt)
+static int needwarning(int wt, int quiet_mode)
 {
 	int ret;
 
+        if (quiet_mode == QUIET_FULL) return FALSE;
+        else if (quiet_mode == QUIET_PARTIAL)
+        {
+            if (wt == 10)
+               return TRUE;
+            else if (wt == 5)
+               return TRUE;
+            else if ( (wt % 60) == 0)
+               return TRUE;
+            else
+               return FALSE;
+        }
+        /* no silence setting, print lots of warnings */
 	if (wt < 10)
 		ret = 1;
 	else if (wt < 60)
@@ -481,8 +506,7 @@ int main(int argc, char **argv)
 	struct tm		*lt;
 	struct stat		st;
 	struct utmp		*ut;
-	time_t			t;
-	uid_t			realuid;
+	time_t			t, target_time;
 	char			*halttype;
 	char			*downusers[32];
 	char			buf[128];
@@ -496,10 +520,18 @@ int main(int argc, char **argv)
 	int			useacl = 0;
 	int			pid = 0;
 	int			user_ok = 0;
+        int quiet_level = QUIET_NONE;   /* Whether to display shutdown warning */
 
 	/* We can be installed setuid root (executable for a special group) */
-	realuid = getuid();
-	setuid(geteuid());
+	/* 
+        This way is risky, do error check on setuid call.
+        setuid(geteuid());
+        */
+        errno = 0;
+        if (setuid(geteuid()) == -1) {
+            fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
+            abort();
+	}
 
 	if (getuid() != 0) {
   		fprintf(stderr, "shutdown: you must be root to do that!\n");
@@ -510,13 +542,13 @@ int main(int argc, char **argv)
 	halttype = NULL;
 
 	/* Process the options. */
-	while((c = getopt(argc, argv, "HPacqkrhnfFyt:g:i:")) != EOF) {
+	while((c = getopt(argc, argv, "HPacqQkrhnfFyt:g:i:")) != EOF) {
   		switch(c) {
 			case 'H':
 				halttype = "HALT";
 				break;
 			case 'P':
-				halttype = "POWERDOWN";
+				halttype = "POWEROFF";
 				break;
 			case 'a': /* Access control. */
 				useacl = 1;
@@ -545,6 +577,12 @@ int main(int argc, char **argv)
 			case 't': /* Delay between TERM and KILL */
 				sltime = optarg;
 				break;
+                        case 'q': /* put into somewhat quiet mode */
+                                quiet_level = QUIET_PARTIAL;
+                                break;
+                        case 'Q': /* put into full quiet mode */
+                                quiet_level = QUIET_FULL;
+                                break;
 			case 'y': /* Ignored for sysV compatibility */
 				break;
 			case 'g': /* sysv style to specify time. */
@@ -627,7 +665,8 @@ int main(int argc, char **argv)
 
 	/* Read pid of running shutdown from a file */
 	if ((fp = fopen(SDPID, "r")) != NULL) {
-		fscanf(fp, "%d", &pid);
+		if (fscanf(fp, "%d", &pid) != 1)
+			pid = 0;
 		fclose(fp);
 	}
 
@@ -692,6 +731,12 @@ int main(int argc, char **argv)
 			break;
 	}
 
+	/* Go to the root directory */
+	if (chdir("/")) {
+		fprintf(stderr, "shutdown: chdir(/): %m\n");
+		exit(1);
+	}
+
 	/* Create a new PID file. */
 	unlink(SDPID);
 	umask(022);
@@ -715,8 +760,6 @@ int main(int argc, char **argv)
 	sa.sa_handler = stopit;
 	sigaction(SIGINT, &sa, NULL);
 
-	/* Go to the root directory */
-	chdir("/");
 	if (fastboot)  close(open(FASTBOOT,  O_CREAT | O_RDWR, 0644));
 	if (forcefsck) close(open(FORCEFSCK, O_CREAT | O_RDWR, 0644));
 
@@ -743,20 +786,40 @@ int main(int argc, char **argv)
 		if (wt < 0) wt += 1440;
 	}
 	/* Shutdown NOW if time == 0 */
-	if (wt == 0) shutdown(halttype);
+	if (wt == 0) issue_shutdown(halttype);
+
+        /* Rather than loop and reduce wt (wait time) once per minute,
+           we shall check the current time against the target time.
+           Then calculate the remaining wating time based on the difference
+           between current time and target time.
+           This avoids missing shutdown time (target time) after the
+           computer has been asleep. -- Jesse
+        */
+        /* target time, in seconds = current time + wait time */
+        time(&t);
+        target_time = t + (60 * wt); 
 
 	/* Give warnings on regular intervals and finally shutdown. */
-	if (wt < 15 && !needwarning(wt)) warn(wt);
+	if (wt < 15 && !needwarning(wt, quiet_level)) issue_warn(wt);
 	while(wt) {
 		if (wt <= 5 && !didnolog) {
 			donologin(wt);
 			didnolog++;
 		}
-		if (needwarning(wt)) warn(wt);
+		if (needwarning(wt, quiet_level)) issue_warn(wt);
 		hardsleep(60);
-		wt--;
+                time(&t);    /* get current time once per minute */
+                if (t >= target_time)     /* past the target */
+                  wt = 0;
+                else if ( (target_time - t) <= 60 )  /* less 1 min remains */
+                {
+                    hardsleep(target_time - t);
+                    wt = 0;
+                }
+                else                      /* more than 1 min remains */
+                   wt = (int) (target_time - t) / 60;
 	}
-	shutdown(halttype);
+	issue_shutdown(halttype);
 
 	return 0; /* Never happens */
 }

@@ -1,3 +1,4 @@
+'\" -*- coding: UTF-8 -*-
 .\" A man page for fstab-decode(8).
 .\"
 .\" Copyright (C) 2006 Red Hat, Inc. All rights reserved.
@@ -22,11 +23,11 @@
 fstab-decode \- run a command with fstab-encoded arguments
 
 .SH SYNOPSIS
-\fB fstab-decode\fR \fICOMMAND\fR [\fIARGUMENT\fR]...
+\fBfstab-decode\fR \fICOMMAND\fR [\fIARGUMENT\fR]...
 
 .SH DESCRIPTION
 .B fstab-decode
-decodes escapes in the specified \FIARGUMENT\fRs
+decodes escapes in the specified \fIARGUMENT\fRs
 and uses them to run \fICOMMAND\fR.
 The argument escaping uses the same rules as path escaping in
 \fB/etc/fstab\fR,
@@ -41,5 +42,6 @@ can't be run.
 Otherwise it exits with the status returned by \fICOMMAND\fR.
 
 .SH EXAMPLES
-
-.B fstab-decode umount $(awk '$3 == "vfat" { print $2 }' /etc/fstab)
+.nf
+.B fstab-decode umount $(awk \[aq]$3 == \[dq]vfat\[dq] { print $2 }\[aq] /etc/fstab)
+.fi

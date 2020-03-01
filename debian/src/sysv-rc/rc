@@ -76,12 +76,15 @@ test -s /etc/init.d/.depend.stop  || CONCURRENCY="none"
 if test -e /etc/init.d/.legacy-bootordering ; then
 	CONCURRENCY="none"
 fi
+if grep -wqs concurrency=none /proc/cmdline; then
+	CONCURRENCY="none"
+fi
 if ! test -e /proc/stat; then
 	# startpar requires /proc/stat
 	if [ "$(uname)" = "GNU/kFreeBSD" ] ; then
 		mount -t linprocfs linprocfs /proc
 	elif [ "$(uname)" = "GNU" ] ; then
-		mount -t proc none /proc
+		mount -t proc none /proc -ocompatible
 	fi
 fi
 if [ -x /lib/startpar/startpar ] ; then
@@ -155,7 +158,6 @@ then
 		fi
 	elif [ "$previous" != N ]
 	then
-		# Run all scripts with the same level in parallel
 		CURLEVEL=""
 		for s in /etc/rc$runlevel.d/K*
 		do
@@ -204,7 +206,6 @@ then
 		fi
 	else
 		# Now run the START scripts for this runlevel.
-		# Run all scripts with the same level in parallel
 		CURLEVEL=""
 		for s in /etc/rc$runlevel.d/S*
 		do

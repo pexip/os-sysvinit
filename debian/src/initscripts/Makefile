@@ -28,7 +28,6 @@ install:
 	chmod 755 $(DESTDIR)$(sysconfdir)/init.d/[a-z]*
 	chmod 755 $(DESTDIR)$(sysconfdir)/network/if-up.d/[a-z]*
 	chmod 644 $(DESTDIR)/lib/init/*.sh
-	chmod 644 $(DESTDIR)$(sysconfdir)/init.d/skeleton
 	chmod -R g-w $(DESTDIR)
 	chown -R root:root $(DESTDIR)
 

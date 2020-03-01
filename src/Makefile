@@ -9,48 +9,60 @@
 #
 
 CPPFLAGS =
-CFLAGS	?= -ansi -O2 -fomit-frame-pointer
-override CFLAGS += -W -Wall -D_GNU_SOURCE
+CFLAGS  ?= -O2
+override CFLAGS += -ansi -fomit-frame-pointer -fstack-protector-strong -W -Wall -Wunreachable-code -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -D_XOPEN_SOURCE -D_GNU_SOURCE -DVERSION=\"$(VERSION)\"
+override CFLAGS += $(shell getconf LFS_CFLAGS)
 STATIC	=
+MANDB	:= s@^\('\\\\\"\)[^\*-]*-\*- coding: [^[:blank:]]\+ -\*-@\1@
+
+#
+# Leave empty if the mountpoint(1) command from util-linux 2.20
+# and above should be used, otherwise set it to yes.
+#
+MNTPOINT=
 
 # For some known distributions we do not build all programs, otherwise we do.
 BIN	=
 SBIN	= init halt shutdown runlevel killall5 fstab-decode
-USRBIN	= last mesg
+USRBIN	= last mesg readbootlog
 
-MAN1	= last.1 lastb.1 mesg.1
-MAN5	= initscript.5 inittab.5
+MAN1	= last.1 lastb.1 mesg.1 readbootlog.1
+MAN5	= initscript.5 inittab.5 initctl.5
 MAN8	= halt.8 init.8 killall5.8 pidof.8 poweroff.8 reboot.8 runlevel.8
 MAN8	+= shutdown.8 telinit.8 fstab-decode.8
 
 ifeq ($(DISTRO),)
-BIN	+= mountpoint
 SBIN	+= sulogin bootlogd
 USRBIN	+= utmpdump wall
-MAN1	+= utmpdump.1 mountpoint.1 wall.1
+MAN1	+= utmpdump.1 wall.1
 MAN8	+= sulogin.8 bootlogd.8
 endif
 
 ifeq ($(DISTRO),Debian)
 CPPFLAGS+= -DACCTON_OFF
-BIN	+= mountpoint
 SBIN	+= sulogin bootlogd
-MAN1	+= mountpoint.1
 MAN8	+= sulogin.8 bootlogd.8
+MANDB	:=
 endif
 
 ifeq ($(DISTRO),Owl)
 USRBIN	+= wall
 MAN1	+= wall.1
+MANDB	:=
 endif
 
 ifeq ($(DISTRO),SuSE)
 CPPFLAGS+= -DUSE_SYSFS -DSANE_TIO -DSIGINT_ONLYONCE -DUSE_ONELINE
-BIN	+= mountpoint
 SBIN	+= sulogin
 USRBIN	+= utmpdump
-MAN1	+= utmpdump.1 mountpoint.1
+MAN1	+= utmpdump.1
 MAN8	+= sulogin.8
+MANDB	:=
+endif
+
+ifeq ($(MNTPOINT),yes)
+BIN	+= mountpoint
+MAN1	+= mountpoint.1
 endif
 
 ID		= $(shell id -u)
@@ -78,7 +90,12 @@ else
 endif
 
 # Additional libs for GNU libc.
-ifneq ($(wildcard /usr/lib*/libcrypt.a),)
+ifneq ($(wildcard /usr/lib*/libcrypt.*),)
+  SULOGINLIBS	+= -lcrypt
+endif
+
+# Additional libs for GNU libc / multiarch on Debian based systems.
+ifneq ($(wildcard /usr/lib/*/libcrypt.*),)
   SULOGINLIBS	+= -lcrypt
 endif
 
@@ -90,41 +107,67 @@ all:		$(BIN) $(SBIN) $(USRBIN)
 #	$(CC) $(CFLAGS) $(CPPFLAGS) -c $^ -o $@
 
 init:		LDLIBS += $(INITLIBS) $(STATIC)
-init:		init.o init_utmp.o
+init:		init.o init_utmp.o runlevellog.o
 
-halt:		halt.o ifdown.o hddown.o utmp.o reboot.h
+halt:		LDLIBS += $(STATIC)
+halt:		halt.o ifdown.o hddown.o utmp.o runlevellog.o
 
-last:		last.o oldutmp.h
+last:		LDLIBS += $(STATIC)
+last:		last.o
 
+mesg:		LDLIBS += $(STATIC)
 mesg:		mesg.o
 
+mountpoint:	LDLIBS += $(STATIC)
 mountpoint:	mountpoint.o
 
+utmpdump:	LDLIBS += $(STATIC)
 utmpdump:	utmpdump.o
 
-runlevel:	runlevel.o
+runlevel:	LDLIBS += $(STATIC)
+runlevel:	runlevel.o runlevellog.o
 
 sulogin:	LDLIBS += $(SULOGINLIBS) $(STATIC)
-sulogin:	sulogin.o
+sulogin:	sulogin.o consoles.o
 
+wall:		LDLIBS += $(STATIC)
 wall:		dowall.o wall.o
 
-shutdown:	dowall.o shutdown.o utmp.o reboot.h
+shutdown:	LDLIBS += $(STATIC)
+shutdown:	dowall.o shutdown.o utmp.o
 
-bootlogd:	LDLIBS += -lutil
-bootlogd:	bootlogd.o
+bootlogd:	LDLIBS += -lutil $(STATIC)
+bootlogd:	bootlogd.o bootlogd.h
+
+readbootlog:	LDLIBS += $(STATIC)
+readbootlog:	readbootlog.o bootlogd.h
+
+fstab-decode:	LDLIBS += $(STATIC)
+fstab-decode:	fstab-decode.o
 
 sulogin.o:	CPPFLAGS += $(SELINUX_DEF)
 sulogin.o:	sulogin.c 
 
-init.o:		CPPFLAGS += $(SELINUX_DEF)
-init.o:		init.c init.h set.h reboot.h initreq.h
+runlevellog.o:	runlevellog.h runlevellog.c paths.h
 
-utmp.o:		utmp.c init.h
+init.o:		CPPFLAGS += $(SELINUX_DEF)
+init.o:		init.c init.h initreq.h paths.h reboot.h runlevellog.h runlevellog.c set.h paths.h
+
+utmp.o:		
 
 init_utmp.o:	CPPFLAGS += -DINIT_MAIN
-init_utmp.o:	utmp.c init.h
+init_utmp.o:	utmp.c init.h initreq.h paths.h
 		$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+utmpdump.o:	utmpdump.c oldutmp.h
+
+shutdown.o:	shutdown.c paths.h reboot.h initreq.h init.h
+
+halt.o:		halt.c reboot.h paths.h runlevellog.c runlevellog.h
+
+last.o:		last.c oldutmp.h
+
+consoles.o:	consoles.c consoles.h
 
 cleanobjs:
 		rm -f *.o *.bak
@@ -137,7 +180,7 @@ clobber:	cleanobjs
 
 distclean:	clobber
 
-install:
+install:	all
 		$(INSTALL_DIR) $(ROOT)/bin/ $(ROOT)/sbin/
 		$(INSTALL_DIR) $(ROOT)/usr/bin/
 		for i in $(BIN); do \
@@ -150,7 +193,7 @@ install:
 			$(INSTALL_EXEC) $$i $(ROOT)/usr/bin/ ; \
 		done
 		# $(INSTALL_DIR) $(ROOT)/etc/
-		# $(INSTALL_EXEC) initscript.sample $(ROOT)/etc/
+		# $(INSTALL_EXEC) ../doc/initscript.sample $(ROOT)/etc/
 		ln -sf halt $(ROOT)/sbin/reboot
 		ln -sf halt $(ROOT)/sbin/poweroff
 		ln -sf init $(ROOT)/sbin/telinit
@@ -163,21 +206,24 @@ install:
 		$(INSTALL_DIR) $(ROOT)$(MANDIR)/man1/
 		$(INSTALL_DIR) $(ROOT)$(MANDIR)/man5/
 		$(INSTALL_DIR) $(ROOT)$(MANDIR)/man8/
-		for i in $(MAN1); do \
-			$(INSTALL_DATA) ../man/$$i $(ROOT)$(MANDIR)/man1/; \
+		for man in $(MAN1); do \
+			$(INSTALL_DATA) ../man/$$man $(ROOT)$(MANDIR)/man1/; \
+			sed -i "1{ $(MANDB); }" $(ROOT)$(MANDIR)/man1/$$man ; \
 		done
-		for i in $(MAN5); do \
-			$(INSTALL_DATA) ../man/$$i $(ROOT)$(MANDIR)/man5/; \
+		for man in $(MAN5); do \
+			$(INSTALL_DATA) ../man/$$man $(ROOT)$(MANDIR)/man5/; \
+			sed -i "1{ $(MANDB); }" $(ROOT)$(MANDIR)/man5/$$man ; \
 		done
-		for i in $(MAN8); do \
-			$(INSTALL_DATA) ../man/$$i $(ROOT)$(MANDIR)/man8/; \
+		for man in $(MAN8); do \
+			$(INSTALL_DATA) ../man/$$man $(ROOT)$(MANDIR)/man8/; \
+			sed -i "1{ $(MANDB); }" $(ROOT)$(MANDIR)/man8/$$man ; \
 		done
 ifeq ($(ROOT),)
 		#
 		# This part is skipped on Debian systems, the
 		# debian.preinst script takes care of it.
-		@if [ ! -p /dev/initctl ]; then \
-		 echo "Creating /dev/initctl"; \
-		 rm -f /dev/initctl; \
-		 mknod -m 600 /dev/initctl p; fi
+		@if [ ! -p /run/initctl ]; then \
+		 echo "Creating /run/initctl"; \
+		 rm -f /run/initctl; \
+		 mknod -m 600 /run/initctl p; fi
 endif

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: sysvinit@packages.debian.org\n"
-"POT-Creation-Date: 2012-09-29 13:56-0400\n"
+"POT-Creation-Date: 2018-10-26 08:14+0000\n"
 "PO-Revision-Date: 2012-06-09 10:17+0200\n"
 "Last-Translator: Michał Kułach <michal.kulach@gmail.com>\n"
 "Language-Team: Polish <debian-l10n-polish@lists.debian.org>\n"
@@ -18,53 +18,72 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2);\n"
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
-msgid "Unable to migrate to dependency-based boot system"
-msgstr "Nie można zmienić systemu rozruchu na tryb oparty na zależnościach"
-
-#. Type: note
-#. Description
-#: ../sysv-rc.templates:1001
-msgid ""
-"Problems in the boot system exist which are preventing migration to "
-"dependency-based boot sequencing:"
+#: ../sysvinit-core.templates:1001
+msgid "Update getty pathnames and add hurd-console?"
 msgstr ""
-"Problemy w istniejącym systemie rozruchu uniemożliwiły migrację do trybu "
-"opartego na zależnościach:"
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
+#: ../sysvinit-core.templates:1001
 msgid ""
-"If the reported problem is a local modification, it needs to be fixed "
-"manually.  These are typically due to obsolete conffiles being left after a "
-"package has been removed, but not purged.  It is suggested that these are "
-"removed by running:"
+"Your /etc/inittab seems to use /libexec/getty as getty and/or to miss hurd-"
+"console entry. The default inittab has been changed, however your /etc/"
+"inittab has been modified. Note that sysvinit has not been used to boot an "
+"Hurd system for long, so any errors in that file would not have shown up "
+"earlier."
 msgstr ""
-"Jeśli zgłoszony problem wynika z lokalnej modyfikacji, musi być naprawiony "
-"ręcznie. Z reguły jest to skutek przestarzałych plików konfiguracyjnych, "
-"które pozostały po pakiecie, który został usunięty, lecz nie wyczyszczony. "
-"Zaleca się usunięcie ich, wykonując polecenie:"
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
-msgid "${SUGGESTION}"
-msgstr "${SUGGESTION}"
-
-#. Type: note
-#. Description
-#: ../sysv-rc.templates:1001
+#: ../sysvinit-core.templates:1001
 msgid ""
-"Package installation can not continue until the above problems have been "
-"fixed.  To reattempt the migration process after these problems have been "
-"fixed, run \"dpkg --configure sysv-rc\"."
+"If you allow this change, a backup will be stored in /etc/inittab.dpkg-old."
 msgstr ""
-"Instalacja pakietu nie może być kontynuowana, dopóki powyższe problemy nie "
-"zostaną naprawione. Aby spróbować przeprowadzić migrację ponownie, po "
-"naprawieniu problemów, proszę wykonać polecenie \"dpkg --configure sysv-rc\"."
+
+#. Type: boolean
+#. Description
+#: ../sysvinit-core.templates:1001
+msgid ""
+"If you don't allow this change, an updated inittab will be written to /etc/"
+"inittab.dpkg-new. Please review the changes and update your /etc/inittab "
+"accordingly."
+msgstr ""
+
+#~ msgid "Unable to migrate to dependency-based boot system"
+#~ msgstr "Nie można zmienić systemu rozruchu na tryb oparty na zależnościach"
+
+#~ msgid ""
+#~ "Problems in the boot system exist which are preventing migration to "
+#~ "dependency-based boot sequencing:"
+#~ msgstr ""
+#~ "Problemy w istniejącym systemie rozruchu uniemożliwiły migrację do trybu "
+#~ "opartego na zależnościach:"
+
+#~ msgid ""
+#~ "If the reported problem is a local modification, it needs to be fixed "
+#~ "manually.  These are typically due to obsolete conffiles being left after "
+#~ "a package has been removed, but not purged.  It is suggested that these "
+#~ "are removed by running:"
+#~ msgstr ""
+#~ "Jeśli zgłoszony problem wynika z lokalnej modyfikacji, musi być "
+#~ "naprawiony ręcznie. Z reguły jest to skutek przestarzałych plików "
+#~ "konfiguracyjnych, które pozostały po pakiecie, który został usunięty, "
+#~ "lecz nie wyczyszczony. Zaleca się usunięcie ich, wykonując polecenie:"
+
+#~ msgid "${SUGGESTION}"
+#~ msgstr "${SUGGESTION}"
+
+#~ msgid ""
+#~ "Package installation can not continue until the above problems have been "
+#~ "fixed.  To reattempt the migration process after these problems have been "
+#~ "fixed, run \"dpkg --configure sysv-rc\"."
+#~ msgstr ""
+#~ "Instalacja pakietu nie może być kontynuowana, dopóki powyższe problemy "
+#~ "nie zostaną naprawione. Aby spróbować przeprowadzić migrację ponownie, po "
+#~ "naprawieniu problemów, proszę wykonać polecenie \"dpkg --configure sysv-rc"
+#~ "\"."
 
 #~ msgid "Migrate legacy boot sequencing to dependency-based sequencing?"
 #~ msgstr "Zmienić tradycyjny tryb rozruchowy na tryb oparty na zależnościach?"

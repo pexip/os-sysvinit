@@ -1,6 +1,6 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the sysvinit package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: sysvinit\n"
 "Report-Msgid-Bugs-To: sysvinit@packages.debian.org\n"
-"POT-Creation-Date: 2012-09-29 13:56-0400\n"
+"POT-Creation-Date: 2018-10-26 08:14+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,41 +17,35 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
-msgid "Unable to migrate to dependency-based boot system"
+#: ../sysvinit-core.templates:1001
+msgid "Update getty pathnames and add hurd-console?"
 msgstr ""
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
+#: ../sysvinit-core.templates:1001
 msgid ""
-"Problems in the boot system exist which are preventing migration to "
-"dependency-based boot sequencing:"
+"Your /etc/inittab seems to use /libexec/getty as getty and/or to miss hurd-"
+"console entry. The default inittab has been changed, however your /etc/"
+"inittab has been modified. Note that sysvinit has not been used to boot an "
+"Hurd system for long, so any errors in that file would not have shown up "
+"earlier."
 msgstr ""
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
+#: ../sysvinit-core.templates:1001
 msgid ""
-"If the reported problem is a local modification, it needs to be fixed "
-"manually.  These are typically due to obsolete conffiles being left after a "
-"package has been removed, but not purged.  It is suggested that these are "
-"removed by running:"
+"If you allow this change, a backup will be stored in /etc/inittab.dpkg-old."
 msgstr ""
 
-#. Type: note
+#. Type: boolean
 #. Description
-#: ../sysv-rc.templates:1001
-msgid "${SUGGESTION}"
-msgstr ""
-
-#. Type: note
-#. Description
-#: ../sysv-rc.templates:1001
+#: ../sysvinit-core.templates:1001
 msgid ""
-"Package installation can not continue until the above problems have been "
-"fixed.  To reattempt the migration process after these problems have been "
-"fixed, run \"dpkg --configure sysv-rc\"."
+"If you don't allow this change, an updated inittab will be written to /etc/"
+"inittab.dpkg-new. Please review the changes and update your /etc/inittab "
+"accordingly."
 msgstr ""
