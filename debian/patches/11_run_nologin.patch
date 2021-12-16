@@ -1,10 +1,19 @@
-Description: Use /run/nologin instead of /etc/nologin
-Author: Roger Leigh <rleigh@debian.org>
-Bug-Debian: http://bugs.debian.org/660862
+From: Roger Leigh <rleigh@debian.org>
+Date: Fri, 2 Aug 2019 09:49:34 +0000
+Subject: Use /run/nologin instead of /etc/nologin
 
+Bug-Debian: http://bugs.debian.org/660862
+---
+ man/shutdown.8 | 2 +-
+ src/paths.h    | 2 +-
+ src/shutdown.c | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/man/shutdown.8 b/man/shutdown.8
+index 5d012ec..3d8ac0e 100644
 --- a/man/shutdown.8
 +++ b/man/shutdown.8
-@@ -140,7 +140,7 @@
+@@ -145,7 +145,7 @@ Second, it can be in the format \fB+\fP\fIm\fP, in which \fIm\fP is the
  number of minutes to wait.  The word \fBnow\fP is an alias for \fB+0\fP.
  .PP
  If shutdown is called with a delay, it will create the advisory file
@@ -13,6 +22,8 @@ Bug-Debian: http://bugs.debian.org/660862
  which causes programs such as \fIlogin(1)\fP to not allow new user
  logins. This file is created five minutes before the shutdown sequence
  starts. Shutdown removes this file if it is stopped before it
+diff --git a/src/paths.h b/src/paths.h
+index 05f9c1b..c9b82c1 100644
 --- a/src/paths.h
 +++ b/src/paths.h
 @@ -28,7 +28,7 @@
@@ -24,9 +35,11 @@ Bug-Debian: http://bugs.debian.org/660862
  #define FASTBOOT	"/fastboot"		/* Enable fast boot. */
  #define FORCEFSCK	"/forcefsck"		/* Force fsck on boot */
  #define SDPID		"/var/run/shutdown.pid"	/* PID of shutdown program */
+diff --git a/src/shutdown.c b/src/shutdown.c
+index b744a2c..6e08910 100644
 --- a/src/shutdown.c
 +++ b/src/shutdown.c
-@@ -244,7 +244,7 @@
+@@ -253,7 +253,7 @@ void issue_warn(int mins)
  }
  
  /*

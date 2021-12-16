@@ -48,6 +48,11 @@ do_start() {
 	fi
 	post_mountall
 
+	# Instances of savelog(8), started from {checkroot} and {checkfs} will
+	# wait for /var/log/fsck to appear to write logs there. If /var/log is
+	# tmpfs, we have to make /var/log/fsck appear here. (see #524007)
+	mkdir -p /var/log/fsck
+
 	# We might have mounted something over /run; see if
 	# /run/initctl is present.  Look for
 	# /usr/share/sysvinit/update-rc.d to verify that sysvinit (and
@@ -74,11 +79,11 @@ do_start() {
 	else
 		if [ "$VERBOSE" = no ]
 		then
-			log_action_begin_msg "Activating swapfile swap"
+			log_action_begin_msg "Activating swapfile swap, if any"
 			swapon -a -e 2>/dev/null || :  # Stifle "Device or resource busy"
 			log_action_end_msg 0
 		else
-			log_daemon_msg "Will now activate swapfile swap"
+			log_daemon_msg "Will now activate swapfile swap, if any"
 			swapon -a -e -v
 			log_action_end_msg $?
 		fi

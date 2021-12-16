@@ -34,6 +34,10 @@ mount_filesystems () {
 	#
 	domount "$MNTMODE" proc "" /proc proc "-onodev,noexec,nosuid"
 
+	if grep -E -qs "securityfs\$" /proc/filesystems ; then
+		domount "$MNTMODE" securityfs "" /sys/kernel/security securityfs
+	fi
+
 	#
 	# Mount sysfs on /sys
 	#
@@ -48,10 +52,6 @@ mount_filesystems () {
 		domount "$MNTMODE" pstore "" /sys/fs/pstore pstore ""
 	fi
 
-	if [ -d /sys/kernel/config ]
-	then
-		domount "$MNTMODE" configfs "" /sys/kernel/config configfs ""
-	fi
 }
 
 case "$1" in

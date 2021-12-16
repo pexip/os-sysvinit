@@ -51,7 +51,7 @@ po::powerokwait:/etc/init.d/powerfail stop
 # Note that on most Debian systems ttyv6 is used by the X Window System,
 # so if you want to add more getty's go ahead but skip ttyv6 if you run X.
 #
-1:2345:respawn:/sbin/getty 38400 ttyv0 xterm
+1:2345:respawn:/sbin/getty --noclear 38400 ttyv0 xterm
 2:23:respawn:/sbin/getty 38400 ttyv1 xterm
 3:23:respawn:/sbin/getty 38400 ttyv2 xterm
 4:23:respawn:/sbin/getty 38400 ttyv3 xterm

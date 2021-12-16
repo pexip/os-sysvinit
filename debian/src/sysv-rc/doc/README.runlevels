@@ -9,6 +9,28 @@
    those scripts. These links are named S<2-digit-number><original-name>
    or K<2-digit-number><original-name>.
 
+   When ``init`` changes runlevel first the targets of the links whose
+   names start with a ``K`` are executed, each with the single argument
+   ``stop``, followed by the scripts prefixed with an ``S``, each with the
+   single argument ``start``. (The links are those in the ``/etc/rcn.d``
+   directory corresponding to the new runlevel.) The ``K`` links are
+   responsible for killing services and the ``S`` link for starting
+   services upon entering the runlevel.
+
+   The two-digit number mm is used to determine the order in which to run
+   the scripts: low-numbered links have their scripts run first. For
+   example, the ``K20`` scripts will be executed before the ``K30``
+   scripts. This is used when a certain service must be started before
+   another. For example, the name server ``bind`` might need to be started
+   before the news server ``inn`` so that ``inn`` can set up its access
+   lists. In this case, the script that starts ``bind`` would have a lower
+   number than the script that starts ``inn`` so that it runs first:
+
+   The two runlevels 0 (halt) and 6 (reboot) are slightly different. In
+   these runlevels, the links with an ``S`` prefix are still called after
+   those with a ``K`` prefix, but they too are called with the single
+   argument ``stop``.
+
    If a scripts has the ".sh" suffix it is a bourne shell script and
    MAY be handled in an optimized manner. The behaviour of executing the
    script in an optimized way will not differ in any way from it being

@@ -25,3 +25,9 @@
 
 # automatically repair filesystems with inconsistencies during boot
 #FSCKFIX=no
+
+# be verbose even if kernel command line contains "quiet"
+#INIT_VERBOSE=yes
+
+# Mount NFS filesystem asynchronously
+#ASYNCMOUNTNFS=yes

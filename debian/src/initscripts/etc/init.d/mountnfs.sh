@@ -23,7 +23,7 @@ do_wait_async_mount() {
 	# then wait around for it.
 
 	waitnfs=
-	for file in "$(eval ls $(fstab_files))"; do
+	for file in $(fstab_files); do
 		if [ -f "$file" ]; then
 			while read DEV MTPT FSTYPE OPTS REST; do
 				case "$DEV" in

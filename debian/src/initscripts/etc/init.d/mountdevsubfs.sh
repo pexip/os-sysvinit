@@ -4,6 +4,7 @@
 # Required-Start:    mountkernfs
 # Required-Stop:
 # Should-Start:      udev
+# X-Start-Before:    keyboard-setup.sh
 # Default-Start:     S
 # Default-Stop:
 # Short-Description: Mount special file systems under /dev.
@@ -27,10 +28,24 @@ KERNEL="$(uname -s)"
 . /lib/lsb/init-functions
 . /lib/init/mount-functions.sh
 
+# idempotent, but does not change extant symlinks (or directories, for /dev/fd)
+trylink() {
+	test -h "/dev/$1" || test -d "/dev/$1" || ln -s -- "$2" "/dev/$1" || {
+		echo "W: unable to ensure link /dev/$1 -> $2"
+		ls -lad "/dev/$1"
+	} >&2
+}
+
 # May be run several times, so must be idempotent.
 # $1: Mount mode, to allow for remounting
-mount_filesystems () {
+mount_filesystems() {
 	MNTMODE="$1"
+
+	# Ensure standard I/O nodes are present
+	trylink fd /proc/self/fd
+	trylink stdin fd/0
+	trylink stdout fd/1
+	trylink stderr fd/2
 
 	# Mount a tmpfs on /run/shm
 	mount_shm "$MNTMODE"

@@ -36,7 +36,7 @@ set_env() {
 	start_nfs=no
 	NETFS=""
 	NETDEV=""
-	for file in "$(eval ls $(fstab_files))"; do
+	for file in $(fstab_files); do
 		if [ -f "$file" ]; then
 			while read DEV MTPT FSTYPE OPTS REST; do
 				case "$DEV" in
@@ -54,7 +54,7 @@ set_env() {
 				esac
 				case "$FSTYPE" in
 				  nfs)
-					# NFS filsystems normally
+					# NFS filesystems normally
 					# require statd and
 					# portmap. However, if nolock
 					# is set, portmap and statd
@@ -145,7 +145,7 @@ exit_unless_last_interface() {
 # Using 'no !=' instead of 'yes =' to make sure async nfs mounting is
 # the default even without a value in /etc/default/rcS
 set_env
-# Exit imediately and do not claim to wait for the last interface if
+# Exit immediately and do not claim to wait for the last interface if
 # no network file systems are listed in /etc/fstab.
 if [ "$start_nfs" = "no" ] && [ ! "$NETFS" ] && [ ! "$NETDEV" ]; then
   exit 0
@@ -160,7 +160,7 @@ if [ no != "$ASYNCMOUNTNFS" ]; then
     # Lock around this otherwise insanity may occur
     mkdir /var/run/network          2>/dev/null || true
 
-    # Wait until all auto interfaces are up before attemting to mount
+    # Wait until all auto interfaces are up before attempting to mount
     # network file systems.
     exit_unless_last_interface
 

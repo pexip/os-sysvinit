@@ -19,7 +19,7 @@ mkflagfile()
 	# able to introduce a symlink here.  As an extra precaution,
 	# set noclobber.
 	set -o noclobber
-	:> "$1" || { log_failure_msg "bootclean: Failure creating '$1'." ; return 1 ; }
+	true > "$1" || { log_failure_msg "bootclean: Failure creating '$1'." ; return 1 ; }
 	return 0
 }
 

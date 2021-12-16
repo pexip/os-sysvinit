@@ -11,24 +11,33 @@
 #                    early in the boot, just before getty is run.
 ### END INIT INFO
 
-PATH=/sbin:/usr/sbin:/bin:/usr/bin
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
 [ "$DELAYLOGIN" ] || DELAYLOGIN=yes
 . /lib/init/vars.sh
 
 do_start () {
+	# If /var/log/dmesg exists, rotate it, otherwise touch it with
+	# reasonable default permsissions and ownership.
+	#
+	# savelog(8) preserves ownership and permissions, that were set by
+	# local system administrator.
+	if test -f /var/log/dmesg ; then
+		savelog -q -p -c 5 /var/log/dmesg
+	else
+		touch /var/log/dmesg
+		chown root:adm /var/log/dmesg
+		chmod 640 /var/log/dmesg
+	fi
+
 	# Save kernel messages in /var/log/dmesg
 	if which dmesg >/dev/null 2>&1
 	then
-		[ -f /var/log/dmesg ] && savelog -q -p -c 5 /var/log/dmesg
 		dmesg -s 524288 > /var/log/dmesg
-		chgrp adm /var/log/dmesg || :
 	elif [ -c /dev/klog ]
 	then
-		[ -f /var/log/dmesg ] && savelog -q -p -c 5 /var/log/dmesg
 		dd if=/dev/klog of=/var/log/dmesg &
 		sleep 1
 		kill $!
-		[ -f /var/log/dmesg ] && { chgrp adm /var/log/dmesg || : ; }
 	fi
 }
 

@@ -5,39 +5,41 @@ Maintainer: Debian sysvinit maintainers <debian-init-diversity@chiark.greenend.o
 Uploaders:
  Ian Jackson <ijackson@chiark.greenend.org.uk>,
  Benda Xu <heroxbd@gentoo.org>,
- Dmitry Bogatov <KAction@debian.org>,
+ Adam Borowski <kilobyte@angband.pl>,
  Vincenzo (KatolaZ) Nicosia <katolaz@freaknet.org>,
 Build-Depends:
- debhelper-compat (= 11),
- libselinux1-dev (>= 1.14) [linux-any],
- libsepol1-dev [linux-any],
+ debhelper-compat (= 12),
+ libcrypt-dev,
+ libselinux1-dev [linux-any],
  po-debconf,
- quilt (>= 0.40),
-Standards-Version: 4.3.0
-Homepage: http://savannah.nongnu.org/projects/sysvinit
+Rules-Requires-Root: no
+Standards-Version: 4.5.0
+Homepage: https://savannah.nongnu.org/projects/sysvinit
 Vcs-Git: https://salsa.debian.org/debian/sysvinit.git
 Vcs-Browser: https://salsa.debian.org/debian/sysvinit
 
 Package: sysvinit-core
 Architecture: any
 Depends:
- debianutils (>= 4),
- initscripts (>= 2.88dsf-13.3),
+ initscripts,
  kbdcontrol (>= 8.2+ds2-6) [kfreebsd-any],
  sysv-rc | file-rc | openrc,
  sysvinit-utils (>= 2.86.ds1-66),
+ mount [linux-any],
  ${misc:Depends},
  ${shlibs:Depends},
 Conflicts:
  systemd-sysv,
- upstart,
+ runit-init,
 Replaces:
  systemd-sysv,
  sysvinit (<< 2.88dsf-44~),
- upstart,
+ runit-init,
 Suggests:
  bootlogd,
-Description: System-V-like init utilities
+Recommends:
+ orphan-sysvinit-scripts,
+Description: System-V-like init
  This package contains programs required for booting
  a Debian system and doing basic process management.
  .
@@ -51,59 +53,40 @@ Priority: required
 Essential: yes
 Architecture: any
 Multi-Arch: foreign
-Replaces:
- initscripts (<< 2.88dsf-59.5),
 Depends:
- init-system-helpers (>= 1.25~),
- util-linux (>> 2.28-2~),
+ lsb-base (>= 11.0.0~),
  ${misc:Depends},
  ${shlibs:Depends},
-Breaks:
- systemd (<< 215),
 Description: System-V-like utilities
  This package contains the important System-V-like utilities.
  .
  Specifically, this package includes:
- killall5, pidof
+ init-d-script, fstab-decode, killall5, pidof
 
 Package: sysv-rc
 Architecture: all
 Multi-Arch: foreign
-Recommends:
- lsb-base (>= 3.2-14),
-Pre-Depends:
- init-system-helpers (>= 1.25~),
 Depends:
- insserv (>> 1.12.0-10),
- startpar,
+ insserv,
+ lsb-base,
+ startpar (>= 0.62-1~),
  sysvinit-utils (>= 2.86.ds1-62),
  ${misc:Depends},
-Breaks:
- systemd (<< 215),
 Description: System-V-like runlevel change mechanism
  This package provides support for the System-V like system
  for booting, changing runlevels, and shutting down,
  configured through symbolic links in /etc/rc?.d/.
 
 Package: initscripts
-Architecture: any
+Architecture: all
 Multi-Arch: foreign
 Depends:
- coreutils (>= 5.93),
- debianutils (>= 4),
- lsb-base (>= 3.2-14),
+ lsb-base,
  sysv-rc | file-rc | openrc,
- sysvinit-utils (>= 2.88dsf-59.5),
- mount [linux-any],
  ${misc:Depends},
- ${shlibs:Depends},
 Recommends:
  e2fsprogs,
  psmisc,
-Breaks:
- hurd (<< 0.5.git20131101~),
- ifupdown (<< 0.7.46),
- util-linux (<< 2.26.2-4~),
 Description: scripts for initializing and shutting down the system
  The scripts in this package initialize a standard Debian
  system at boot time and shut it down at halt or reboot time.
@@ -111,7 +94,7 @@ Description: scripts for initializing and shutting down the system
 Package: bootlogd
 Architecture: any
 Depends:
- lsb-base (>= 3.2-14),
+ lsb-base,
  ${misc:Depends},
  ${shlibs:Depends},
 Description: daemon to log boot messages

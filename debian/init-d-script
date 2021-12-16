@@ -14,7 +14,7 @@ shift
 # PATH should only include /usr/* if it runs after the mountnfs.sh
 # script.  Scripts running before mountnfs.sh should remove the /usr/*
 # entries.
-PATH=/sbin:/usr/sbin:/bin:/usr/bin
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
 export PATH
 
 is_call_implemented() {
@@ -43,22 +43,10 @@ call() {
 # Function that starts the daemon/service
 #
 
-# Return
-#   0 if daemon has been started
-#   1 if daemon was already running
-#   2 if daemon could not be started
 do_start_cmd() {
-	start-stop-daemon --start --quiet ${PIDFILE:+--pidfile ${PIDFILE}} \
-	    $START_ARGS \
-	    --startas $DAEMON --name $NAME --exec $DAEMON --test > /dev/null \
-	    || return 1
-	start-stop-daemon --start --quiet ${PIDFILE:+--pidfile ${PIDFILE}} \
-	    $START_ARGS \
-	    --startas $DAEMON --name $NAME --exec $DAEMON -- $DAEMON_ARGS \
-	    || return 2
-	# Add code here, if necessary, that waits for the process to be ready
-	# to handle requests from services started subsequently which depend
-	# on this one.  As a last resort, sleep for some time.
+	start-stop-daemon --start --quiet --oknodo \
+	    ${PIDFILE:+--pidfile ${PIDFILE}} $START_ARGS \
+	    --startas $DAEMON --name ${COMMAND_NAME} --exec $DAEMON -- $DAEMON_ARGS
 }
 
 do_start()
@@ -66,14 +54,17 @@ do_start()
 	if is_call_implemented do_start_prepare ; then
 		call do_start_prepare
 	fi
-	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
+	log_daemon_msg "Starting $DESC" "$NAME"
 	call do_start_cmd
-	case "$?" in
-		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
-		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	retval=$?
+	case ${retval} in
+		0|1) vlog_end_msg 0 ;;
+		2)   vlog_end_msg 1 ;;
 	esac
 	if is_call_implemented do_start_cleanup ; then
 		call do_start_cleanup
+	else
+		return ${retval}
 	fi
 }
 
@@ -81,15 +72,10 @@ do_start()
 # Function that stops the daemon/service
 #
 
-# Return
-#   0 if daemon has been stopped
-#   1 if daemon was already stopped
-#   2 if daemon could not be stopped
-#   other if a failure occurred
 do_stop_cmd() {
-	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 \
+	start-stop-daemon --stop --quiet --oknodo --retry=TERM/30/KILL/5 \
 	    $STOP_ARGS \
-	    ${PIDFILE:+--pidfile ${PIDFILE}} --name $NAME --exec $DAEMON
+	    ${PIDFILE:+--pidfile ${PIDFILE}} --name ${COMMAND_NAME} --exec $DAEMON
 	RETVAL="$?"
 	[ "$RETVAL" = 2 ] && return 2
 	# Wait for children to finish too if this is a daemon that forks
@@ -112,25 +98,37 @@ do_stop()
 	if is_call_implemented do_stop_prepare ; then
 		call do_stop_prepare
 	fi
-	[ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
+	vlog_daemon_msg "Stopping $DESC" "$NAME"
 	call do_stop_cmd
-	case "$?" in
-		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
-		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	retval=$?
+	case ${retval} in
+		0|1) vlog_end_msg 0 ;;
+		2)   vlog_end_msg 1 ;;
 	esac
 	if is_call_implemented do_stop_cleanup ; then
 		call do_stop_cleanup
+	else
+		return ${retval}
 	fi
 }
 
 do_restart() {
-	[ "$VERBOSE" != no ] && log_daemon_msg "Restarting $DESC" "$NAME"
+	if is_call_implemented do_restart_prepare ; then
+		call do_restart_prepare
+	fi
+	vlog_daemon_msg "Restarting $DESC" "$NAME"
 	call do_stop_cmd
 	call do_start_cmd
-	case "$?" in
-		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
-		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	retval=$?
+	case ${retval} in
+		0|1) vlog_end_msg 0 ;;
+		2)   vlog_end_msg 1 ;;
 	esac
+	if is_call_implemented do_restart_cleanup ; then
+		call do_restart_cleanup
+	else
+		return ${retval}
+	fi
 }
 
 do_force_reload() {
@@ -144,10 +142,16 @@ do_force_reload() {
 # Enable this using
 # alias do_reload=do_reload_sigusr1
 do_reload_sigusr1() {
+        if is_call_implemented do_reload_prepare ; then
+            call do_reload_prepare
+        fi
         log_daemon_msg "Reloading $DESC configuration files" "$NAME"
         start-stop-daemon --oknodo --stop --signal 1 --quiet \
           --pidfile "$PIDFILE" --exec "$DAEMON"
         log_end_msg $?
+        if is_call_implemented do_reload_cleanup ; then
+            call do_reload_cleanup
+        fi
 }
 
 do_status() {
@@ -160,6 +164,10 @@ if [ "$DEBUG" = "true" ] ; then
     set -x
 fi
 
+# Unset configuration variables to make sure that if variable is not assigned a
+# value in init script, it does not use one from environment. See #822918.
+unset DAEMON DAEMON_ARGS NAME COMMAND_NAME PIDFILE
+
 SCRIPTNAME="$__init_d_script_name"
 scriptbasename="$(basename "$__init_d_script_name")"
 if [ "$scriptbasename" != "init-d-script" ] ; then
@@ -170,6 +178,7 @@ fi
 
 NAME=${NAME:=$(basename $DAEMON)}
 DESC=${DESC:=$NAME}
+: ${COMMAND_NAME:=${NAME}}
 
 # Do not use pid file if $PIDFILE is 'none'.  Otherwise, generate from
 # $NAME or use the value provided by the init.d script.
@@ -179,13 +188,13 @@ elif [ -z "$PIDFILE" ] ; then
     PIDFILE=/var/run/$NAME.pid
 fi
 
+# Read configuration variable file if it is present
+[ -r "/etc/default/${NAME}" ] && . "/etc/default/${NAME}"
+
 # Exit if the package is not installed
 if [ none != "$DAEMON" ] && [ ! -x "$DAEMON" ] ; then
 	exit 0
 fi
-
-# Read configuration variable file if it is present
-[ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh

@@ -44,13 +44,6 @@ PATH
 * Question: Should we include /usr/local/sbin and /usr/local/bin too?
   I don't see this question addressed in Policy.  Ref: #227540
 
-Rotating fsck logs?
--------------------
-debian/fscklog.sh is a proposed script for rotating fsck logs.
-Currently, we _overwrite_ the fsck log files on every boot so there
-is no need to rotate them.  I am not inclined to implement rotation
-of fsck logs.
-
 Dependencies
 ------------
 To go away:

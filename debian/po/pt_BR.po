@@ -1,15 +1,15 @@
 # Debconf translations for sysvinit.
 # Copyright (C) 2009 THE sysvinit'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the sysvinit package.
-# Adriano Rafael Gomes <adrianorg@gmail.com>, 2009, 2010, 2012.
+# Adriano Rafael Gomes <adrianorg@debian.org>, 2009-2020.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: sysvinit 2.88dsf-32.1\n"
 "Report-Msgid-Bugs-To: sysvinit@packages.debian.org\n"
 "POT-Creation-Date: 2018-10-26 08:14+0000\n"
-"PO-Revision-Date: 2012-09-05 19:34-0300\n"
-"Last-Translator: Adriano Rafael Gomes <adrianorg@gmail.com>\n"
+"PO-Revision-Date: 2020-09-12 18:59-0300\n"
+"Last-Translator: Adriano Rafael Gomes <adrianorg@debian.org>\n"
 "Language-Team: Brazilian Portuguese <debian-l10n-portuguese@lists.debian."
 "org>\n"
 "Language: pt_BR\n"
@@ -21,7 +21,7 @@ msgstr ""
 #. Description
 #: ../sysvinit-core.templates:1001
 msgid "Update getty pathnames and add hurd-console?"
-msgstr ""
+msgstr "Atualizar nomes dos caminhos do getty e adicionar hurd-console?"
 
 #. Type: boolean
 #. Description
@@ -33,6 +33,11 @@ msgid ""
 "Hurd system for long, so any errors in that file would not have shown up "
 "earlier."
 msgstr ""
+"Seu arquivo /etc/inittab parece usar /libexec/getty como getty e/ou faltar "
+"uma entrada hurd-console. A inittab padrão foi alterada, portanto seu "
+"arquivo /etc/inittab foi modificado. Note que o sysvinit não tem sido usado "
+"para inicializar um sistema Hurd por muito tempo, de modo que quaisquer "
+"erros nesse arquivo não teriam aparecido antes."
 
 #. Type: boolean
 #. Description
@@ -40,6 +45,8 @@ msgstr ""
 msgid ""
 "If you allow this change, a backup will be stored in /etc/inittab.dpkg-old."
 msgstr ""
+"Se você permitir essa alteração, uma cópia de segurança será armazenada em /"
+"etc/inittab.dpkg-old."
 
 #. Type: boolean
 #. Description
@@ -49,6 +56,9 @@ msgid ""
 "inittab.dpkg-new. Please review the changes and update your /etc/inittab "
 "accordingly."
 msgstr ""
+"Se você não permitir essa alteração, uma inittab atualizada será escrita em /"
+"etc/inittab.dpkg-new. Por favor, revise as alterações e atualize seu "
+"arquivo /etc/inittab de acordo."
 
 #~ msgid "Unable to migrate to dependency-based boot system"
 #~ msgstr ""

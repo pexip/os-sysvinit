@@ -8,8 +8,7 @@
 # Short-Description: Run /etc/rc.local if it exist
 ### END INIT INFO
 
-
-PATH=/sbin:/usr/sbin:/bin:/usr/bin
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
 . /lib/init/vars.sh
 . /lib/lsb/init-functions

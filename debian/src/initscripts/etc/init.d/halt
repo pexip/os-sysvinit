@@ -11,7 +11,7 @@
 
 NETDOWN=yes
 
-PATH=/sbin:/usr/sbin:/bin:/usr/bin
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
 [ -f /etc/default/halt ] && . /etc/default/halt
 
 . /lib/lsb/init-functions

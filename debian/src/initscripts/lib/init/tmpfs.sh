@@ -86,7 +86,15 @@ need_overflow_tmp ()
 
 RAMLOCK=yes
 # These might be overridden by /etc/default/rcS
-if [ -z "$RAMSHM" ]; then RAMSHM=yes; fi
+
+if test -z "${RAMSHM}" ; then
+	# tmpfs can not be used for shm yet, see #923078
+	case "$(uname -s)" in
+		(GNU) RAMSHM=no  ;;
+		(*)   RAMSHM=yes ;;
+	esac
+fi
+
 if [ -z "$RAMTMP" ]; then RAMTMP=no; fi
 
 TMPFS_SIZE=20%VM

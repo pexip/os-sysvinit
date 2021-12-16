@@ -7,4 +7,4 @@ bootlogd: init.d-script-missing-dependency-on-remote_fs etc/init.d/bootlogd: req
 bootlogd: script-in-etc-init.d-not-registered-via-update-rc.d
 
 bootlogd: init.d-script-missing-dependency-on-local_fs
-bootlogd: init.d-script-depends-on-all-virtual-facility
+bootlogd: init.d-script-depends-on-all-virtual-facility etc/init.d/stop-bootlogd required-start

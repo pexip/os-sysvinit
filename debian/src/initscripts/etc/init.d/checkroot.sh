@@ -13,7 +13,7 @@
 
 # Include /usr/bin in path to find on_ac_power if /usr/ is on the root
 # partition.
-PATH=/sbin:/bin:/usr/bin
+PATH=/usr/bin:/sbin:/bin
 FSCK_LOGFILE=/var/log/fsck/checkroot
 [ "$FSCKFIX" ] || FSCKFIX=no
 [ "$SULOGIN" ] || SULOGIN=no
@@ -21,6 +21,12 @@ FSCK_LOGFILE=/var/log/fsck/checkroot
 
 . /lib/lsb/init-functions
 . /lib/init/mount-functions.sh
+
+if command -v setterm >/dev/null 2>&1; then
+	setterm=setterm
+else
+	setterm='true -- '
+fi
 
 _want_force_fsck () {
 	case "$(findmnt -n -o FSTYPE /)" in
@@ -239,8 +245,10 @@ Will restart in 5 seconds."
 		if [ "$VERBOSE" = no ]
 		then
 			log_action_begin_msg "Checking root file system"
-			logsave_best_effort fsck $spinner $force $fix -t $roottype $rootdev
+			$setterm --msg off
+			logsave_best_effort fsck $spinner $force $fix -T -t $roottype $rootdev
 			FSCKCODE=$?
+			$setterm --msg on
 			if [ "$FSCKCODE" = 0 ]
 			then
 				log_action_end_msg 0
@@ -249,7 +257,7 @@ Will restart in 5 seconds."
 			fi
 		else
 			log_daemon_msg "Will now check root file system"
-			logsave_best_effort fsck $spinner $force $fix -V -t $roottype $rootdev
+			logsave_best_effort fsck $spinner $force $fix -T -V -t $roottype $rootdev
 			FSCKCODE=$?
 			log_end_msg $FSCKCODE
 		fi

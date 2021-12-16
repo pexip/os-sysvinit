@@ -1,0 +1,11 @@
+--- sysvinit-2.96.orig/src/Makefile
++++ sysvinit-2.96/src/Makefile
+@@ -95,7 +95,7 @@ ifneq ($(wildcard /usr/lib*/libcrypt.*),
+ endif
+ 
+ # Additional libs for GNU libc / multiarch on Debian based systems.
+-ifneq ($(wildcard /usr/lib/*/libcrypt.*),)
++ifneq ($(wildcard /usr/lib/*/libcrypt.*)(wildcard /lib/*/libcrypt.*),)
+   SULOGINLIBS	+= -lcrypt
+ endif
+ 

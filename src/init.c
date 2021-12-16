@@ -13,11 +13,12 @@
 Version information is not placed in the top-level Makefile by default
 */
 #ifndef VERSION
-#define VERSION "2.91"
+#define VERSION "2.94"
 #endif
 /*
  *		This file is part of the sysvinit suite,
  *		Copyright (C) 1991-2004 Miquel van Smoorenburg.
+ *		Copyright (C) 2017-2019 Jesse Smith
  *
  *		This program is free software; you can redistribute it and/or modify
  *		it under the terms of the GNU General Public License as published by
@@ -52,7 +53,11 @@ Version information is not placed in the top-level Makefile by default
 #include <string.h>
 #include <signal.h>
 #include <termios.h>
+#ifdef __FreeBSD__
+#include <utmpx.h>
+#else
 #include <utmp.h>
+#endif
 #include <ctype.h>
 #include <stdarg.h>
 #include <sys/ttydefaults.h>
@@ -61,6 +66,9 @@ Version information is not placed in the top-level Makefile by default
 
 #ifdef WITH_SELINUX
 #  include <selinux/selinux.h>
+#endif
+#ifdef __FreeBSD__
+extern char **environ;
 #endif
 
 #ifdef __i386__
@@ -133,7 +141,7 @@ int wrote_wtmp_reboot = 1;	/* Set when we wrote the reboot record */
 int wrote_utmp_reboot = 1;	/* Set when we wrote the reboot record */
 int wrote_wtmp_rlevel = 1;	/* Set when we wrote the runlevel record */
 int wrote_utmp_rlevel = 1;	/* Set when we wrote the runlevel record */
-int sltime = WAIT_BETWEEN_SIGNALS;    /* Sleep time between TERM and KILL */
+int sleep_time = WAIT_BETWEEN_SIGNALS;    /* Sleep time between TERM and KILL */
 char *argv0;			/* First arguments; show up in ps listing */
 int maxproclen;			/* Maximal length of argv[0] with \0 */
 struct utmp utproto;		/* Only used for sizeof(utproto.ut_id) */
@@ -144,7 +152,7 @@ int main(int, char **);
 
 /*	Used by re-exec part */
 int reload = 0;			/* Should we do initialization stuff? */
-char *myname="/sbin/init";	/* What should we exec */
+char *myname=INIT;		/* What should we exec */
 int oops_error;			/* Used by some of the re-exec code. */
 const char *Signature = "12567362";	/* Signature for re-exec fd */
 
@@ -219,20 +227,23 @@ struct {
 #define NR_EXTRA_ENV	16
 char *extra_env[NR_EXTRA_ENV];
 
+#define MINI_SLEEP 10      /* ten milliseconds */
+#define SHORT_SLEEP 5000   /* five seconds */
+#define LONG_SLEEP 30000   /* 30 seconds sleep to deal with memory issues*/
 
 /*
- *	Sleep a number of seconds.
+ *	Sleep a number of milliseconds.
  *
- *	This only works correctly because the linux select updates
+ *	This only works correctly because Linux select updates
  *	the elapsed time in the struct timeval passed to select!
  */
 static
-void do_sleep(int sec)
+void do_msleep(int msec)
 {
 	struct timeval tv;
 
-	tv.tv_sec = sec;
-	tv.tv_usec = 0;
+	tv.tv_sec = msec / 1000;
+	tv.tv_usec = (msec % 1000) * 1000;
 
 	while(select(0, NULL, NULL, NULL, &tv) < 0 && errno == EINTR)
 		;
@@ -249,7 +260,7 @@ void *imalloc(size_t size)
 
 	while ((m = malloc(size)) == NULL) {
 		initlog(L_VB, "out of memory");
-		do_sleep(5);
+		do_msleep(SHORT_SLEEP);
 	}
 	memset(m, 0, size);
 	return m;
@@ -288,7 +299,7 @@ void send_state(int fd)
 	fprintf(fp, "-SI%u\n", got_signals);
 	fprintf(fp, "-WR%d\n", wrote_wtmp_reboot);
 	fprintf(fp, "-WU%d\n", wrote_utmp_reboot);
-	fprintf(fp, "-ST%d\n", sltime);
+	fprintf(fp, "-ST%d\n", sleep_time);
 	fprintf(fp, "-DB%d\n", did_boot);
 
 	for (p = family; p; p = p->next) {
@@ -416,7 +427,7 @@ static CHILD *get_record(FILE *f)
 				}
 				break;
 			case D_SLTIME:
-				if (fscanf(f, "%d\n", &sltime) == EOF && errno != 0) {
+				if (fscanf(f, "%d\n", &sleep_time) == EOF && errno != 0) {
 					fprintf(stderr, "%s (%d): %s\n", __FILE__, __LINE__, strerror(errno));
 				}
 				break;
@@ -521,8 +532,12 @@ int receive_state(int fd)
  *	Set the process title.
  */
 #ifdef __GNUC__
+#ifndef __FreeBSD__
 __attribute__ ((format (printf, 1, 2)))
 #endif
+#endif
+/* This function already exists on FreeBSD. No need to delcare it. */
+#ifndef __FreeBSD__
 static int setproctitle(char *fmt, ...)
 {
 	va_list ap;
@@ -542,6 +557,7 @@ static int setproctitle(char *fmt, ...)
 
 	return len;
 }
+#endif
 
 /*
  *	Set console_dev to a working console.
@@ -710,7 +726,7 @@ void coredump(void)
 	sigdelset(&mask, SIGSEGV);
 	sigprocmask(SIG_SETMASK, &mask, NULL);
 
-	do_sleep(5);
+	do_msleep(SHORT_SLEEP);
 	exit(0);
 }
 
@@ -730,13 +746,13 @@ void segv_handler(int sig, struct sigcontext ctx)
 	char	*p = "";
 	int	saved_errno = errno;
 
-	if ((void *)ctx.eip >= (void *)do_sleep &&
+	if ((void *)ctx.eip >= (void *)do_msleep &&
 	    (void *)ctx.eip < (void *)main)
 		p = " (code)";
 	initlog(L_VB, "PANIC: segmentation violation at %p%s! "
 		  "sleeping for 30 seconds.", (void *)ctx.eip, p);
 	coredump();
-	do_sleep(30);
+	do_msleep(LONG_SLEEP);
 	errno = saved_errno;
 }
 #else
@@ -751,7 +767,7 @@ void segv_handler(int sig)
 	initlog(L_VB,
 		"PANIC: segmentation violation! sleeping for 30 seconds.");
 	coredump();
-	do_sleep(30);
+	do_msleep(LONG_SLEEP);
 	errno = saved_errno;
 }
 #endif
@@ -965,7 +981,7 @@ char **init_buildenv(int child)
 
 	while ((e = (char**)calloc(n, sizeof(char *))) == NULL) {
 		initlog(L_VB, "out of memory");
-		do_sleep(5);
+		do_msleep(SHORT_SLEEP);
 	}
 
 	for (n = 0; environ[n]; n++)
@@ -1291,7 +1307,7 @@ pid_t spawn(CHILD *ch, int *res)
 
 	if (pid == -1) {
 		initlog(L_VB, "cannot fork, retry..");
-		do_sleep(5);
+		do_msleep(SHORT_SLEEP);
 		continue;
 	}
 	return(pid);
@@ -1699,13 +1715,14 @@ void read_inittab(void)
 	
     }
     /*
-     *	See if we have to wait 5 seconds
+     *	See if we have to wait sleep_time seconds
      */
     if (foundOne && round == 0) {
 	/*
-	 *	Yup, but check every second if we still have children.
+	 *	Yup, but check every 10 milliseconds if we still have children.
+         *      The f < 100 * sleep_time refers to sleep time in 10 millisecond chunks.
 	 */
-	for(f = 0; f < sltime; f++) {
+	for(f = 0; f < 100 * sleep_time; f++) {
 		for(ch = family; ch; ch = ch->next) {
 			if (!(ch->flags & KILLME)) continue;
 			if ((ch->flags & RUNNING) && !(ch->flags & ZOMBIE))
@@ -1719,7 +1736,7 @@ void read_inittab(void)
 			foundOne = 0; /* Skip the sleep below. */
 			break;
 		}
-		do_sleep(1);
+		do_msleep(MINI_SLEEP);
 	}
     }
   }
@@ -1727,7 +1744,7 @@ void read_inittab(void)
   /*
    *	Now give all processes the chance to die and collect exit statuses.
    */
-  if (foundOne) do_sleep(1);
+  if (foundOne) do_msleep(MINI_SLEEP);
   for(ch = family; ch; ch = ch->next)
 	if (ch->flags & KILLME) {
 		if (!(ch->flags & ZOMBIE))
@@ -1959,7 +1976,7 @@ int read_level(int arg)
 		foo = arg;
 		ok = 1;
 	}
-	if (ok == 2) sltime = st;
+	if (ok == 2) sleep_time = st;
 
 #endif /* INITLVL */
 
@@ -2160,9 +2177,11 @@ int make_pipe(int fd)
 
 /*
  *	Attempt to re-exec.
+ *      Renaming to my_re_exec since re_exec is now a common function name
+ *      which conflicts.
  */
 static
-void re_exec(void)
+void my_re_exec(void)
 {
 	CHILD		*ch;
 	sigset_t	mask, oldset;
@@ -2279,7 +2298,7 @@ void fifo_new_level(int level)
 		runlevel = read_level(level);
 		if (runlevel == 'U') {
 			runlevel = oldlevel;
-			re_exec();
+			my_re_exec();
 		} else {
 			if (oldlevel != 'S' && runlevel == 'S') console_stty();
 			if (runlevel == '6' || runlevel == '0' ||
@@ -2414,7 +2433,8 @@ void check_init_fifo(void)
   }
 
   /* Wait for data to appear, _if_ the pipe was opened. */
-  if (pipe_fd >= 0) while(!quit) {
+  if (pipe_fd >= 0) { 
+     while(!quit) {
 
 	/* Do select, return on EINTR. */
 	FD_ZERO(&fds);
@@ -2460,22 +2480,22 @@ void check_init_fifo(void)
 	}
 	switch(request.cmd) {
 		case INIT_CMD_RUNLVL:
-			sltime = request.sleeptime;
+			sleep_time = request.sleeptime;
 			fifo_new_level(request.runlevel);
 			quit = 1;
 			break;
 		case INIT_CMD_POWERFAIL:
-			sltime = request.sleeptime;
+			sleep_time = request.sleeptime;
 			do_power_fail('F');
 			quit = 1;
 			break;
 		case INIT_CMD_POWERFAILNOW:
-			sltime = request.sleeptime;
+			sleep_time = request.sleeptime;
 			do_power_fail('L');
 			quit = 1;
 			break;
 		case INIT_CMD_POWEROK:
-			sltime = request.sleeptime;
+			sleep_time = request.sleeptime;
 			do_power_fail('O');
 			quit = 1;
 			break;
@@ -2485,9 +2505,9 @@ void check_init_fifo(void)
 		default:
 			initlog(L_VB, "got unimplemented initrequest.");
 			break;
-	}
-  }
-
+	}   /* end of switch */
+    }       /* end of while loop not quitting */
+  }         /* end of if the pipe is open */
   /*
    *	We come here if the pipe couldn't be opened.
    */
@@ -2681,7 +2701,7 @@ void process_signals()
 #endif
 		if (runlevel == 'U') {
 			runlevel = oldlevel;
-			re_exec();
+			my_re_exec();
 		} else {
 			if (oldlevel != 'S' && runlevel == 'S') console_stty();
 			if (runlevel == '6' || runlevel == '0' ||
@@ -2902,7 +2922,7 @@ int telinit(char *progname, int argc, char **argv)
 
 	while ((f = getopt(argc, argv, "t:e:")) != EOF) switch(f) {
 		case 't':
-			sltime = atoi(optarg);
+			sleep_time = atoi(optarg);
 			break;
 		case 'e':
 			if (env == NULL)
@@ -2935,7 +2955,7 @@ int telinit(char *progname, int argc, char **argv)
 			usage(progname);
 		request.cmd = INIT_CMD_RUNLVL;
 		request.runlevel  = argv[optind][0];
-		request.sleeptime = sltime;
+		request.sleeptime = sleep_time;
 	}
 
 	/* Change to the root directory. */
@@ -2977,7 +2997,7 @@ int telinit(char *progname, int argc, char **argv)
 				progname, INITLVL);
 			exit(1);
 		}
-		fprintf(fp, "%s %d", argv[optind], sltime);
+		fprintf(fp, "%s %d", argv[optind], sleep_time);
 		fclose(fp);
 
 		/* And tell init about the pending runlevel change. */

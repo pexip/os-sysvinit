@@ -1,0 +1,37 @@
+From 462a92ce2adb3f9e7d8c55301d8eb4ba2b15830c Mon Sep 17 00:00:00 2001
+From: Jesse Smith <jsmith@resonatingmedia.com>
+Date: Sat, 15 Aug 2020 18:50:58 -0300
+Subject: [PATCH] Fixed time parsing in shutdown when there is a + in front of
+ a 0 time offset. Commands with a postiive time offset (+1) would work but +0
+ fails. This has been corrected by Arkadiusz Miskiewicz.
+
+---
+ src/shutdown.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+--- a/src/shutdown.c
++++ b/src/shutdown.c
+@@ -777,16 +777,18 @@
+ 	if (!strcmp(when, "now")) strcpy(when, "0");
+ 
+         sp = when;
+-	if (when[0] == '+') sp++;
+-	/* Decode shutdown time. */
++	/* Validate time argument. */
+ 	for ( ; *sp; sp++) {
+-		if (*sp != ':' && (*sp < '0' || *sp > '9'))
++		if (*sp != '+' && *sp != ':' && (*sp < '0' || *sp > '9'))
+ 			usage();
+ 	}
++	sp = when;
++	/* Decode shutdown time. */
++	if (when[0] == '+') sp++;
+ 	if (strchr(when, ':') == NULL) {
+ 		/* Time in minutes. */
+-		wt = atoi(when);
+-		if (wt == 0 && when[0] != '0') usage();
++		wt = atoi(sp);
++		if (wt == 0 && sp[0] != '0') usage();
+ 	} else {
+ 		/* Time in hh:mm format. */
+ 		if (sscanf(when, "%d:%2d", &hours, &mins) != 2) usage();

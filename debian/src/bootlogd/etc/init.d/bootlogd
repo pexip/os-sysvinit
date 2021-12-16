@@ -17,7 +17,7 @@ TMPLOG=/run/bootlog
 [ -x "$DAEMON" ] || exit 0
 NAME=bootlogd
 DESC="boot logger"
-BOOTLOGD_OPTS="-c -l $TMPLOG"
+BOOTLOGD_OPTS="-e -c -l $TMPLOG"
 . /lib/init/vars.sh
 
 . /lib/lsb/init-functions
@@ -46,7 +46,7 @@ fi
 case "$ACTION" in
   start)
   	# PATH is set above
-	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
+	log_daemon_msg "Starting $DESC" "$NAME"
 	if [ -d /proc/1/. ]
 	then
 		umask 027
