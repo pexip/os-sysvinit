@@ -251,7 +251,7 @@ can then manipulate the command line so that \fBps\fP(1) shows
 the current runlevel.
 .PP
 .TP 0.5i
-.BI "--version "
+.B \-\-version
 This argument, when used on its own, displays the current version of init
 to the console/stdout. It is a quick way to determine which init software and
 version is being used. After the version information is displayed, init
@@ -276,7 +276,7 @@ On receipt of this signals, init closes and re-opens its control fifo,
 .TP 0.5i
 .B SIGUSR2
 When init receives SIGUSR2, init closes and leaves the control fifo,
-\fB/run/initctl\f\P, closed. This may be used to make sure init is not
+\fB/run/initctl\fP, closed. This may be used to make sure init is not
 holding open any files. However, it also prevents init from switching
 runlevels. Which means commands like shutdown no longer work.
 The fifo can be re-opened by sending init the SIGUSR1 signal.
@@ -344,7 +344,7 @@ page by Michael Haardt (u31b3hs@pool.informatik.rwth-aachen.de).
 .BR login (1),
 .BR sh (1),
 .BR runlevel (8),
-.BR shutdown(8),
+.BR shutdown (8),
 .BR kill (1),
 .BR initctl (5),
 .BR inittab (5),
