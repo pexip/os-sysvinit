@@ -58,8 +58,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-char *Version = "@(#)killall5 2.86 31-Jul-2004 miquels@cistron.nl";
-
 #ifndef PATH_MAX
 #  ifdef MAXPATHLEN
 #    define PATH_MAX MAXPATHLEN
@@ -137,8 +135,16 @@ NFS *nlist;
 
 /* Did we stop all processes ? */
 int sent_sigstop;
-
 int scripts_too = 0;
+
+/* Should pidof try to list processes in I/O wait (D) and zombie (Z) states? */
+#ifndef FALSE
+#define FALSE 0
+#endif
+#ifndef TRUE
+#define TRUE 1
+#endif
+int list_dz_processes = FALSE;
 
 char *progname;	/* the name of the running program */
 #ifdef __GNUC__
@@ -435,7 +441,11 @@ int check4nfs(const char * path, char * real)
 
 	} while (1);
 
-	if (real) strcpy(real, curr);
+	if (real)     /* real is defined elsewhere as being PATH_MAX + 1 */
+        {
+           memset(real, '\0', PATH_MAX + 1);
+           strncpy(real, curr, PATH_MAX);
+        }
 
 	if (errno == EINVAL) {
 		const size_t nlen = strlen(curr);
@@ -596,8 +606,9 @@ int readproc(int do_stat)
 			if (startcode == 0 && endcode == 0)
 				p->kernel = 1;
 			fclose(fp);
-                        if ( (strchr(process_status, 'D') != NULL) ||
-                             (strchr(process_status, 'Z') != NULL) ){
+                        if ( (! list_dz_processes) &&
+                             ( (strchr(process_status, 'D') != NULL) ||
+                               (strchr(process_status, 'Z') != NULL) ) ){
                            /* Ignore zombie processes or processes in
                               disk sleep, as attempts
                               to access the stats of these will
@@ -946,13 +957,14 @@ void pidof_usage(void)
 {
    printf("pidof usage: [options] <program-name>\n\n");
    printf(" -c           Return PIDs with the same root directory\n");
+   printf(" -d <sep>     Use the provided character as output separator\n");
    printf(" -h           Display this help text\n");
-   printf(" -f <format>  Display PIDs in a given printf-style format\n");
    printf(" -n           Avoid using stat system function on network shares\n");
    printf(" -o <pid>     Omit results with a given PID\n");
    printf(" -q           Quiet mode. Do not display output\n");
    printf(" -s           Only return one PID\n");
-   printf(" -x           Return PIDs of shells running scritps with a matchign name\n");
+   printf(" -x           Return PIDs of shells running scripts with a matching name\n");
+   printf(" -z           List zombie and I/O waiting processes. May cause pidof to hang.\n");
    printf("\n");
 }
 
@@ -997,7 +1009,7 @@ int main_pidof(int argc, char **argv)
 	int		chroot_check = 0;
 	struct stat	st;
 	char		tmp[512];
-        char            *format = NULL;
+        char            sep = ' ';
 
 	omit = (OMIT*)0;
 	nlist = (NFS*)0;
@@ -1006,7 +1018,7 @@ int main_pidof(int argc, char **argv)
 	if ((token = getenv("PIDOF_NETFS")) && (strcmp(token,"no") != 0))
 		flags |= PIDOF_NETFS;
 
-	while ((opt = getopt(argc,argv,"qhco:f:sxn")) != EOF) switch (opt) {
+	while ((opt = getopt(argc,argv,"qhco:d:sxzn")) != EOF) switch (opt) {
 		case '?':
 			nsyslog(LOG_ERR,"invalid options on command line!\n");
 			closelog();
@@ -1017,8 +1029,8 @@ int main_pidof(int argc, char **argv)
                 case 'h':
                         pidof_usage();
                         exit(0);
-                case 'f':
-                        format = optarg;
+                case 'd':
+                        sep = optarg[0];
                         break;
 		case 'o':
 			here = optarg;
@@ -1054,6 +1066,9 @@ int main_pidof(int argc, char **argv)
 		case 'x':
 			scripts_too++;
 			break;
+                case 'z':
+                        list_dz_processes = TRUE;
+                        break;
 		case 'n':
 			flags |= PIDOF_NETFS;
 			break;
@@ -1116,14 +1131,9 @@ int main_pidof(int argc, char **argv)
 				}
 
 				if ( ~flags & PIDOF_QUIET ) {
-                                    if (format)
-                                       printf(format, p->pid);
-                                    else
-                                    {
 					if (! first)
-						printf(" ");
+						printf("%c", sep);
 					printf("%d", p->pid);
-                                    }
 				}
 				first = 0;
 			}

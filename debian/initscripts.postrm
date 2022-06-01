@@ -5,7 +5,7 @@
 
 set -e
 
-INITSCRIPTS="mountkernfs.sh brightness hostname.sh mountdevsubfs.sh checkroot.sh \
+INITSCRIPTS="mountkernfs.sh mount-configfs brightness hostname.sh mountdevsubfs.sh checkroot.sh \
 	checkroot-bootclean.sh checkfs.sh mountall.sh mountall-bootclean.sh \
 	mountnfs.sh mountnfs-bootclean.sh bootmisc.sh urandom halt reboot \
 	umountroot umountfs umountnfs.sh sendsigs killprocs single motd \
@@ -22,6 +22,7 @@ case "$1" in
 	rm -f /etc/init.d/bootclean.sh.dpkg-old
 	rm -f /etc/default/bootlogd
 	rm -f /etc/default/bootlogd.dpkg-old
+	rm -f /var/lib/urandom/random-seed
 
 	#
 	# Remove configuration files

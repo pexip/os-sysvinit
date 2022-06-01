@@ -1,3 +1,322 @@
+sysvinit (2.96-7+deb11u1) bullseye; urgency=medium
+
+  [ Tomas Pospisek ]
+  * Clarify that when called with a `time` shutdown will not exit. That's
+    important to know for programs or scripts that call `shutdown
+    ... time` because they will never proceed after having called it
+    (unless they fork exec or similar of course). Point in case:
+    unattended-upgrades gets caught by this.
+
+  [ mirabilos ]
+  * convert to a DEP 3 patch instead
+
+  [ Mark Hindley ]
+  * Backport upstream patch to fix parsing of shutdown +0 (Closes:
+    #1001795).
+
+ -- Mark Hindley <leepen@debian.org>  Thu, 16 Dec 2021 18:12:09 +0000
+
+sysvinit (2.96-7) unstable; urgency=medium
+
+  [ Mark Hindley ]
+  * Mount /proc with -o compatible on HURD only (Closes: #985584).
+  * Build-Depend on libcrypt-dev explicitly (thanks to Helmut Grohne).
+    (Closes: #972315)
+
+  [ Adam Borowski ]
+  * Handle libcrypt moved back to /lib, fixing FTBFS (Closes: #987135).
+
+ -- Adam Borowski <kilobyte@angband.pl>  Sun, 18 Apr 2021 17:38:40 +0200
+
+sysvinit (2.96-6) unstable; urgency=medium
+
+  [ Matthew Vernon ]
+  * Team upload
+  * Recommend orphan-sysvinit-scripts (Closes: #981801)
+  * Update Spanish translation (thanks to Javier Fernández-Sanguino)
+    (Closes: #981479)
+
+  [ Adam Borowski ]
+  * Update Brazillian translations (thanks to Adriano Rafael Gomes)
+    (Closes: #972837)
+
+ -- Matthew Vernon <matthew@debian.org>  Sun, 21 Feb 2021 13:53:09 +0000
+
+sysvinit (2.96-5) unstable; urgency=low
+
+  * Team upload.
+  * debian/src/initscripts/etc/init.d/mountdevsubfs.sh: if /dev/fd
+    is a directory (such as on Hurd), skip symlinking “over” it
+
+ -- Thorsten Glaser <tg@mirbsd.de>  Thu, 10 Sep 2020 17:37:30 +0200
+
+sysvinit (2.96-4) unstable; urgency=critical
+
+  [ Thorsten Glaser ]
+  * Team upload.
+
+  [ Adam Borowski ]
+  * Update the list of tools in sysvinit-utils’ package description
+  * Remove/unversion pre-stretch dependencies (taking care of implied
+    dependencies on Essential) except for no-longer-in-archive sysvinit
+  * Really drop changelog.gz from sysvinit-utils
+  * Conflict/Replace runit-init (because of /sbin/init)
+  * Drop the word “utilities” from bin:sysvinit-core’s short description
+  * Don’t require root to build
+  * Drop Dmitry from Uploaders :(
+
+  [ Samuel Thibault ]
+  * src/initscripts/etc/init.d/{checkroot,checkfs}.sh:
+    Fix getting fsck return code
+
+  [ Bjarni Ingi Gislason ]
+  * Formatting fixes in fstab-decode(8)
+
+  [ Vincent Lefevre ]
+  * Fix a typo in a comment in if-up.d/mountnfs (Closes: #961513)
+
+  [ Thorsten Glaser ]
+  * Bring back support for /etc/init.d/.legacy-bootordering as
+    flag file (manually created by the local admin) to disable
+    concurrent (parallel) boot
+  * Let mountdevsubfs.sh (run early after udev) fixup (if needed)
+    /dev/fd and /dev/std{in,out,err} to work around udev bug #967546
+    and upload as critical system fix (Closes: #968199)
+
+ -- Thorsten Glaser <tg@mirbsd.de>  Fri, 14 Aug 2020 02:29:31 +0200
+
+sysvinit (2.96-3) unstable; urgency=medium
+
+  * Update Dmitry's address.
+  * Drop ancient Debian.NEWS.
+  * Don't install upstream changelog on sysvinit-utils (Essential).
+  * Update trim cut-off for changelog.Debian to pre-buster.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Thu, 19 Mar 2020 23:37:42 +0100
+
+sysvinit (2.96-2.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * No-change package rebuild to fix timestamp issue as raised by
+    buildd. (Closes: #945820)
+
+ -- Boyuan Yang <byang@debian.org>  Wed, 08 Jan 2020 14:07:13 -0500
+
+sysvinit (2.96-2) unstable; urgency=medium
+
+  * Incorporate runlevel documentation from Debian Policy.
+    Thanks to Sean Whitton <spwhitton@spwhitton.name> (Closes: #943583)
+  * init-d-script: fix missing --oknodo in s-s-d invocation.
+    Thanks to Jan Braun <janbraun@gmx.de> (Closes: #954464)
+
+ -- Dmitry Bogatov <KAction@debian.org>  Thu, 28 Nov 2019 21:07:03 +0000
+
+sysvinit (2.96-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Stop providing empty /run directory in bin:initscripts
+  * Stop providing unused /var/lib/insserv/ in bin:sysv-rc
+  * Install bootlog init scripts with dh_install instead of custom Makefile
+  * Add lintian override about dependency on $all in bootlogd init scripts
+  * Remove unused lintian overrides
+  * Remove sysv-rc postinst script, that used to support legacy boot ordering
+  * Remove "debian/fscklog.sh" that was never installed
+  * Bump standards version to 4.4.1
+
+ -- Dmitry Bogatov <KAction@debian.org>  Sat, 19 Oct 2019 00:37:48 +0000
+
+sysvinit (2.96~beta-3) unstable; urgency=medium
+
+  * Team upload.
+  * checkfs, checkroot: Use setterm only if extant (Closes: #941378)
+  * fstab-decode(8): Fix typo pointed out by lintian
+  * sysv-rc.postinst: Rename servive variable (lintian false-positive)
+  * d/rules: Introduce bindnow hardening, prompted by lintian
+  * Fix BD-Uninstallable on ten Debian architectures by replacing the
+    pandoc invocation with a properly written manpage
+  * init: Fix a lintian false-positive on spelling caused by GCC
+
+ -- Thorsten Glaser <tg@mirbsd.de>  Wed, 02 Oct 2019 02:18:53 +0200
+
+sysvinit (2.96~beta-2) unstable; urgency=medium
+
+  * Disable kernel messages during fsck to avoid interleaved output
+    (Closes: #398269)
+  * Make bootlogd stop late enough (Closes: #935302, #920117, 808999)
+
+ -- Dmitry Bogatov <KAction@debian.org>  Mon, 23 Sep 2019 16:12:23 +0000
+
+sysvinit (2.96~beta-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Refresh patches.
+  * Disable escape sequence filtering by bootlogd (Closes: #672361)
+  * Fix missing argument in `domount' call for securityfs (Closes: #935533)
+
+ -- Dmitry Bogatov <KAction@debian.org>  Sat, 24 Aug 2019 14:46:25 +0000
+
+sysvinit (2.95-6) unstable; urgency=medium
+
+  [ Dmitry Bogatov ]
+  * sysv-rc: assume `startpar' is installed into PATH
+  * Document that `CONCURRENCY' variable is no longer used (Closes: #692559)
+  * Use v* version of lsb functions in `init-d-script'
+  * Remove unused lintian overrides
+  * Simplify `debian/rules' by inclusion of dpkg/default.mk
+  * Remove useless build-dependency on libsepol1
+  * Simplify no-libselinux package rebuild
+  * Document ASYNCMOUNTNFS variable in etc/default/rcS (Closes: #530583)
+  * Do not check $VERBOSE when printing "Starting $DESC" (Closes: #658374)
+  * Fix /etc/init.d/rc error message on system w/o initramfs.
+    Thanks to George Taylor <grgtlr5@googlemail.com> (Closes: #909118)
+  * Fix formatting of bootlogd(8) manpage (Closes: #934628)
+  * Install previously overlooked readbootlog(1)
+  * Create /var/log/fsck if /var/log is tmpfs (Closes: #524007)
+
+  [ Pierre Ynard ]
+  * Fix typos in comments in /etc/network/if-up.d/mountnfs (Closes: #734423)
+
+ -- Dmitry Bogatov <KAction@debian.org>  Fri, 23 Aug 2019 16:26:28 +0000
+
+sysvinit (2.95-5) unstable; urgency=medium
+
+  * [2d158bc6] Make default TTYMODE match default TTYPERM of `login' package
+    (Closes: #367432)
+  * [01d4a5b8] Remove overly aggressive optimization from /etc/init.d/rc
+    (Closes: #669406)
+  * [1fb96748] Ensure `mdadm' init script starts before `checkfs'
+    (Closes: #627797)
+  * [91a45784] Restructure init-d-script(5) manpage (Closes: #768362)
+  * [3681b33c] Do not print version of `fsck' during boot (Closes: #386296)
+  * [154eb9a6] Order directories in PATH consistently with /etc/profile
+    (Closes: #553325)
+  * [8e9cc754] Change inittab to pass --noclear to getty on tty1
+    (Closes: #718416)
+  * [beb2cfd3] Make init-d-script based scripts more robust (Closes: #822918)
+  * [ce075375] Allow /etc/default/<script> re-define DAEMON variable
+    (Closes: #768138)
+  * [fce03ed5] Do not imply in README that init scripts must have extension
+    (Closes: #934066)
+  * [77d34f9f] Update /etc/init.d/README to current practices (Closes: #934065)
+  * [af1fa053] Document INIT_VERBOSE variable in /etc/default/rcS
+    (Closes: #730824)
+  * [1cd69037] Make bin:initscripts architecture-independent (Closes: #922962)
+  * [49f87295] Remove useless empty directory from bin:sysv-rc
+  * [974ef1c1] Fix missing README link in /etc/rc0.d
+  * [bc567621] Fix spelling error in init-d-script.5
+
+ -- Dmitry Bogatov <KAction@debian.org>  Mon, 12 Aug 2019 20:13:47 +0000
+
+sysvinit (2.95-4) unstable; urgency=medium
+
+  * [995df63a] Fix FTBFS on kfreebsd-any (Closes: #933638)
+
+ -- Dmitry Bogatov <KAction@debian.org>  Fri, 02 Aug 2019 09:57:48 +0000
+
+sysvinit (2.95-3) unstable; urgency=medium
+
+  * [0c6b0ff0] Attempt to mount /sys/kernel/config after `kmod'
+    (Closes: #840356)
+  * [6fb68099] Fix bug in handling /etc/fstab.d.
+    Thanks to Rolf W. Rasmussen <rolfwr@gmail.com> (Closes: #735930)
+  * [7176b71d] Mount securityfs when it is available.
+    Thanks to Ritesh Raj Sarraf <rrs@debian.org> (Closes: #440709)
+
+ -- Dmitry Bogatov <KAction@debian.org>  Mon, 29 Jul 2019 08:10:44 +0000
+
+sysvinit (2.95-2) unstable; urgency=medium
+
+  * [22e43c01] Make sure dh_fixperms is called during build.
+    Thanks to Chris Lamb <lamby@debian.org> (Closes: #932300)
+  * [a7ef4c4c] Fix wrong permissions of /var/run/utmp.
+    Thanks to Thorsten Glaser <tg@mirbsd.de> (Closes: #932380)
+
+ -- Dmitry Bogatov <KAction@debian.org>  Sun, 21 Jul 2019 19:43:53 +0000
+
+sysvinit (2.95-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Upload to unstable.
+  * Use secure URI in Homepage field.
+  * Set upstream metadata fields: Contact, Name.
+  * Update standards version, no changes needed.
+
+ -- Dmitry Bogatov <KAction@debian.org>  Tue, 16 Jul 2019 19:28:51 +0000
+
+sysvinit (2.95~beta-1) experimental; urgency=medium
+
+  * New upstream release (Closes: #374039).
+
+ -- Dmitry Bogatov <KAction@debian.org>  Wed, 22 May 2019 22:07:32 +0000
+
+sysvinit (2.94-5) experimental; urgency=medium
+
+  * Split long message into several lines to avoid terminal glitches.
+    + Closes: #670585
+    + Thanks: Antoni Villalonga <antoni@friki.cat>
+  * Fix style in /etc/init.d/rc script (Closes: #928249)
+  * Make lsb-base hard dependency of sysv-rc (Closes: #928250)
+  * Error handle redirection used to truncate /var/run/wtmp
+    + Closes: #928348
+    + Thanks: Cristian Ionescu-Idbohrn <cii@axis.com>
+
+ -- Dmitry Bogatov <KAction@debian.org>  Sat, 11 May 2019 20:03:26 +0000
+
+sysvinit (2.94-4) experimental; urgency=medium
+
+  * Add Gitlab CI config file.
+  * Remove obsolete `saveconfig' script. (Closes: #923451)
+  * Correctly upgrade unmodified version of /etc/rc.local (Closes: #923485)
+  * Fix wrong /tmp permissions when symlinking /tmp to /run/tmp.
+    + Closes: #927113
+    + Thanks: Serge Belyshev <belyshev@depni.sinp.msu.ru>
+
+ -- Dmitry Bogatov <KAction@debian.org>  Wed, 24 Apr 2019 01:04:22 +0000
+
+sysvinit (2.94-3) experimental; urgency=medium
+
+  * Correctly quote arguments to grep in umountfs script (Closes: #575204)
+  * Add new parameter COMMAND_NAME to init-d-script (Closes: #834419)
+  * Drop special cases for updates from ancient versions (Closes: #922421)
+  * Remove check for .legacy-bootordering flag file (Closes: #926854)
+  * Remove unused lintian overrides (Closes: #926855)
+
+ -- Dmitry Bogatov <KAction@debian.org>  Sun, 14 Apr 2019 13:40:55 +0000
+
+sysvinit (2.94-2) experimental; urgency=medium
+
+  * Make init-d-scripts exit with sensible values (Closes: #427889)
+  * Make /etc/init.d/reboot respect NETDOWN variable (Closes: #499796)
+  * Improve description of VERBOSE in rcS(5) (Closes: #589050)
+  * Document NETDOWN variable in /etc/default/halt (Closes: #703844)
+  * Move README files from /etc (Closes: #921333)
+  * Do not use unsafe `: >` shell command to create files (Closes: #923478)
+    + Thanks: Pierre Ynard <linkfanel@yahoo.fr>
+  * Make /etc/rc.local conffile (Closes: #923485)
+
+ -- Dmitry Bogatov <KAction@debian.org>  Thu, 04 Apr 2019 22:30:28 +0000
+
+sysvinit (2.94-1) experimental; urgency=medium
+
+  * New upstream release (Closes: #923371, #671589)
+  * Remove unused code from initscripts postinst (Closes: #923168)
+  * Update Danish translation of the debconf templates (Closes: #923058)
+    + Thanks: Joe Dalton <joedalton2@yahoo.dk>
+  * Do not enable tmpfs-based shm on Hurd (Closes: #922915)
+  * Remove useless macro from init-d-script.5 (Closes: #905243)
+    + Thanks: Bjarni Ingi Gislason <bjarniig@rhi.hi.is>
+  * Remove random seed on initscripts purge (Closes: #839238)
+  * Clarify README in /etc/rc2.d (Closes: #608573)
+  * Improve logging about swapfile activation (Closes: #501336)
+
+ -- Dmitry Bogatov <KAction@debian.org>  Thu, 28 Feb 2019 09:59:39 +0000
+
+sysvinit (2.93-9) experimental; urgency=medium
+
+  * Ensure predictable permission on /var/log/dmesg. (Closes: #867747)
+
+ -- Dmitry Bogatov <KAction@debian.org>  Thu, 14 Feb 2019 20:55:23 +0000
+
 sysvinit (2.93-8pexip2) pexip; urgency=medium
 
   * Rebuild in buster environment
@@ -16,6 +335,20 @@ sysvinit (2.93-8) unstable; urgency=medium
     stretch -> bustern upgrade for file-rc users.
 
  -- Dmitry Bogatov <KAction@debian.org>  Thu, 14 Feb 2019 20:33:13 +0000
+
+sysvinit (2.93-7) experimental; urgency=medium
+
+  * Fix logic error in run_migrate() function (Closes: #920320)
+    + Thanks: Pierre Ynard <linkfanel@yahoo.fr>
+  * Fix stale /dev/shm symlink (Closes: #920323)
+    + Thanks: Pierre Ynard <linkfanel@yahoo.fr>
+  * Add pre- and post- hooks for reload/restart actions into init-d-script(5).
+    Previously, only `start' action had such hook (Closes: #920847)
+    + Thanks: Mathieu Mirmont <mat@parad0x.org>
+  * Update Russian translations of debconf template (Closes: #920887)
+    + Thanks: Lev Lamberov <dogsleg@debian.org>
+
+ -- Dmitry Bogatov <KAction@debian.org>  Sun, 03 Feb 2019 22:43:32 +0000
 
 sysvinit (2.93-6) unstable; urgency=medium
 

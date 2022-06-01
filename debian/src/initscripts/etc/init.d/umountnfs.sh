@@ -12,7 +12,7 @@
 #                    top level.
 ### END INIT INFO
 
-PATH=/sbin:/usr/sbin:/bin:/usr/bin
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
 KERNEL="$(uname -s)"
 RELEASE="$(uname -r)"
 . /lib/init/vars.sh

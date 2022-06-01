@@ -1,0 +1,2 @@
+# this checks both locations
+sysvinit-core: bin-sbin-mismatch sbin/halt bin/shutdown -> sbin/shutdown

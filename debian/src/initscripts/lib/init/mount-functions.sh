@@ -378,7 +378,7 @@ run_migrate ()
 		mount -t $FSTYPE "$RUN" "$OLD" $OPTS
 	else
 		# Create symlink if not already present.
-		if [ -L "$OLD" ] && [ "$(readlink "$OLD")" != "$RUN" ]; then
+		if [ -L "$OLD" ] && [ "$(readlink "$OLD")" = "$RUN" ]; then
 			:
 		else
 			rm -f "$OLD"
@@ -579,6 +579,10 @@ mount_shm ()
 
 	if [ ! -d "$SHMDIR" ]
 	then
+		# Remove possible previous reverse symlink.
+		if [ -h "$SHMDIR" ] ; then
+			rm -f "$SHMDIR"
+		fi
 		mkdir --mode=755 "$SHMDIR"
 		[ -x /sbin/restorecon ] && /sbin/restorecon "$SHMDIR"
 	fi
@@ -627,7 +631,7 @@ mount_tmp ()
 	# If /tmp is a symlink, make sure the linked-to directory exists.
 	if [ -L /tmp ] && [ ! -d /tmp ]; then
 		TMPPATH="$(readlink /tmp)"
-		mkdir -p --mode=755 "$TMPPATH"
+		mkdir -p --mode="${TMP_MODE}" "$TMPPATH"
 		[ -x /sbin/restorecon ] && /sbin/restorecon "$TMPPATH"
 	fi
 

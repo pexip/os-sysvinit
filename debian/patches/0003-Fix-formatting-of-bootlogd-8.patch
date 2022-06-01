@@ -1,0 +1,19 @@
+From: Dmitry Bogatov <KAction@debian.org>
+Date: Thu, 22 Aug 2019 15:46:03 +0000
+Subject: Fix formatting of bootlogd(8)
+
+Closes: #934628
+---
+ man/bootlogd.8 | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/man/bootlogd.8
++++ b/man/bootlogd.8
+@@ -79,4 +79,6 @@ If that syntax is ever changed by the ke
+ .SH AUTHOR
+ Miquel van Smoorenburg, miquels@cistron.nl
+ .SH "SEE ALSO"
+-.BR dmesg (8),  fdatasync (3),  readbootlog(1).
++.BR dmesg (8),
++.BR fdatasync (3),
++.BR readbootlog (1)

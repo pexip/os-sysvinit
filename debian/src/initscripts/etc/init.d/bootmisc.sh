@@ -10,8 +10,9 @@
 # Description:       Some cleanup.  Note, it need to run after mountnfs-bootclean.sh.
 ### END INIT INFO
 
-PATH=/sbin:/usr/sbin:/bin:/usr/bin
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
 [ "$DELAYLOGIN" ] || DELAYLOGIN=yes
+. /lib/lsb/init-functions
 . /lib/init/vars.sh
 
 do_start () {
@@ -25,18 +26,20 @@ do_start () {
 		;;
 	esac
 
-	# Create /var/run/utmp so we can login.
-	: > /var/run/utmp
-	if grep -q ^utmp: /etc/group
-	then
-		chmod 664 /var/run/utmp
-		chgrp utmp /var/run/utmp
-	fi
-
 	# Remove bootclean's flag files.
 	# Don't run bootclean again after this!
 	rm -f /tmp/.clean /run/.clean /run/lock/.clean
 	rm -f /tmp/.tmpfs /run/.tmpfs /run/lock/.tmpfs
+
+	readonly utmp='/var/run/utmp'
+	if > "${utmp}" ; then
+		chgrp utmp "${utmp}" || log_warning_msg "failed to chgrp ${utmp}"
+		chmod 664  "${utmp}" || log_warning_msg "failed to chmod ${utmp}"
+		return 0
+	else
+		log_failure_msg "failed to truncate ${utmp}"
+		return 1
+	fi
 }
 
 case "$1" in
