@@ -1,3 +1,9 @@
+sysvinit (2.96-7+deb11u1pexip1) pexip; urgency=medium
+
+  * Initial bullseye build
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Thu, 02 Jun 2022 14:42:59 +0100
+
 sysvinit (2.96-7+deb11u1) bullseye; urgency=medium
 
   [ Tomas Pospisek ]
