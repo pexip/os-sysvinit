@@ -27,6 +27,7 @@ install:
 	chmod 755 $(DESTDIR)$(sysconfdir)/init.d/[a-z]*
 	chmod 755 $(DESTDIR)$(sysconfdir)/network/if-up.d/[a-z]*
 	chmod 755 $(DESTDIR)$(sysconfdir)/rc.local
+	chmod 755 $(DESTDIR)$(sysconfdir)/rc.shutdown
 	chmod 644 $(DESTDIR)/lib/init/*.sh
 	chmod -R g-w $(DESTDIR)
 

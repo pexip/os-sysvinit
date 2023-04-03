@@ -18,31 +18,6 @@ case "$1" in
 	;;
 esac
 
-# This code (and related one in preinst) is required to make
-# /etc/rc.local file conffile, while preserving user modifications.
-#
-# It was introduced during Debian-10 freeze, and must still be in
-# Debian-11.  After that, it must be deleted.
-make_rc_local_conffile () {
-	[ -f /etc/rc.local.dpkg-old ] || return 0
-	# md5 sums of previous out-of-box versions of /etc/rc.local file,
-	# so /etc/rc.local behaves correctly: upgrades to new version
-	# silently if there is no local changes. See #923485.
-	set --
-	set -- "$@" 10fd9f051accb6fd1f753f2d48371890 # Debian-9
-	set -- "$@" 804d8261a41ed2aa9476d7cfac87acd8 # Debian-10
-	md5sum /etc/rc.local.dpkg-old
-	for md5 ; do
-		local line="${md5}  /etc/rc.local.dpkg-old"
-		if echo "${line}" | md5sum -c --status ; then
-			rm /etc/rc.local.dpkg-old
-			return 0
-		fi
-	done
-	mv /etc/rc.local.dpkg-old /etc/rc.local
-}
-make_rc_local_conffile
-
 umask 022
 
 INITSCRIPTS="mountkernfs.sh mount-configfs brightness hostname.sh mountdevsubfs.sh checkroot.sh \

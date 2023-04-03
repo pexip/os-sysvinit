@@ -9,37 +9,31 @@ Bug-Debian: http://bugs.debian.org/660862
  src/shutdown.c | 2 +-
  3 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/man/shutdown.8 b/man/shutdown.8
-index 5d012ec..3d8ac0e 100644
 --- a/man/shutdown.8
 +++ b/man/shutdown.8
-@@ -145,7 +145,7 @@ Second, it can be in the format \fB+\fP\fIm\fP, in which \fIm\fP is the
- number of minutes to wait.  The word \fBnow\fP is an alias for \fB+0\fP.
+@@ -147,7 +147,7 @@
+ The word \fBnow\fP is an alias for \fB+0\fP.
  .PP
- If shutdown is called with a delay, it will create the advisory file
+ If \fBshutdown\fP is called with a delay, it will create the advisory file
 -.I /etc/nologin
 +.I /run/nologin
- which causes programs such as \fIlogin(1)\fP to not allow new user
+ which causes programs such as \fBlogin\fP(1) to not allow new user
  logins. This file is created five minutes before the shutdown sequence
- starts. Shutdown removes this file if it is stopped before it
-diff --git a/src/paths.h b/src/paths.h
-index 05f9c1b..c9b82c1 100644
+ starts. \fBshutdown\fP removes this file if it is stopped before it
 --- a/src/paths.h
 +++ b/src/paths.h
-@@ -28,7 +28,7 @@
- #define SDALLOW		"/etc/shutdown.allow"	/* Users allowed to shutdown */
+@@ -29,7 +29,7 @@
  #define INITTAB		"/etc/inittab"		/* Location of inittab */
+ #define INITTABD	"/etc/inittab.d"	/* Location of inittab.d directory */
  #define INIT		"/sbin/init"		/* Location of init itself. */
 -#define NOLOGIN		"/etc/nologin"		/* Stop user logging in. */
 +#define NOLOGIN		"/run/nologin"		/* Stop user logging in. */
  #define FASTBOOT	"/fastboot"		/* Enable fast boot. */
  #define FORCEFSCK	"/forcefsck"		/* Force fsck on boot */
  #define SDPID		"/var/run/shutdown.pid"	/* PID of shutdown program */
-diff --git a/src/shutdown.c b/src/shutdown.c
-index b744a2c..6e08910 100644
 --- a/src/shutdown.c
 +++ b/src/shutdown.c
-@@ -253,7 +253,7 @@ void issue_warn(int mins)
+@@ -253,7 +253,7 @@
  }
  
  /*

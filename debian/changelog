@@ -1,20 +1,200 @@
-sysvinit (2.96-7+deb11u1) bullseye; urgency=medium
+sysvinit (3.06-4) unstable; urgency=medium
 
-  [ Tomas Pospisek ]
-  * Clarify that when called with a `time` shutdown will not exit. That's
-    important to know for programs or scripts that call `shutdown
-    ... time` because they will never proceed after having called it
-    (unless they fork exec or similar of course). Point in case:
-    unattended-upgrades gets caught by this.
+  * Add Romanian debconf translations with thanks to Remus-Gabriel Chelu
+    <remusgabriel.chelu@disroot.org>.  (Closes: #1033723)
 
-  [ mirabilos ]
-  * convert to a DEP 3 patch instead
+ -- Mark Hindley <leepen@debian.org>  Mon, 03 Apr 2023 07:25:22 +0100
+
+sysvinit (3.06-3) unstable; urgency=medium
+
+  * Cherry pick hunk from upstream to fix regression in pidof not matching
+    symlinks. (Closes: #1033311)
+  * Cherry pick upstream patch to fix memory initialisation in pidof.
+    (Closes: #1033311)
+
+ -- Mark Hindley <leepen@debian.org>  Thu, 30 Mar 2023 13:59:53 +0100
+
+sysvinit (3.06-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Mark Hindley <leepen@debian.org>  Sun, 18 Dec 2022 17:00:20 +0000
+
+sysvinit (3.06-1) experimental; urgency=medium
+
+  * New upstream version 3.06
+  * d/control: bump Standards Version (no changes).
+
+ -- Mark Hindley <leepen@debian.org>  Sun, 18 Dec 2022 11:07:46 +0000
+
+sysvinit (3.06~beta1-1) experimental; urgency=medium
 
   [ Mark Hindley ]
-  * Backport upstream patch to fix parsing of shutdown +0 (Closes:
-    #1001795).
+  * New upstream version 3.06~beta1
+    - no longer requires libcrypt-dev when not building sulogin
+      (Closes: #972315)
+    - adds missing German man page translations (Closes: #1021819)
+    - includes Portuguese translation of manpages, thanks to
+      Américo Monteiro (Closes: #1019168).
+  * Remove unnecessary d/p/libcrypt-lib.patch.
+  * Add Breaks/Replaces for manpages-de initscripts.5.gz.
+  * d/not-installed: add translated versions of initctl.5.
 
- -- Mark Hindley <leepen@debian.org>  Thu, 16 Dec 2021 18:12:09 +0000
+  [ Debian Janitor ]
+  * debian/copyright: use spaces rather than tabs to start continuation lines.
+  * Remove 3 obsolete maintscript entries in 1 files.
+  * Set upstream metadata fields: Bug-Database, Bug-Submit, Repository-Browse.
+  * Fix day-of-week for changelog entry 2.86.ds1-2.
+  * Remove empty maintainer scripts: initscripts (preinst)
+
+ -- Mark Hindley <leepen@debian.org>  Fri, 02 Dec 2022 11:29:21 +0000
+
+sysvinit (3.05-7) unstable; urgency=medium
+
+  * Drop libcrypt-dev from B-Depends, we don't ship sulogin since Stretch
+    which was what we needed the library for.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Wed, 09 Nov 2022 02:47:46 +0100
+
+sysvinit (3.05-6) unstable; urgency=medium
+
+  * d/control: add Breaks and Replaces manpages-{es,fr,hu,pl} to
+    sysvinit-core to avoid init{tab,script}.5 conflict. (Closes: #1020259)
+
+ -- Mark Hindley <leepen@debian.org>  Mon, 19 Sep 2022 11:10:07 +0100
+
+sysvinit (3.05-5) unstable; urgency=medium
+
+  * Don't bother templating lsb-base scripts; this droppage reduces the
+    number of moving parts for rebootstrap folks.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Wed, 14 Sep 2022 22:38:11 +0200
+
+sysvinit (3.05-4) unstable; urgency=medium
+
+  * sysvinit-utils: allow co-installing with dummy lsb-base; debootstrap
+    doesn't understand Provides.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Mon, 12 Sep 2022 21:16:07 +0200
+
+sysvinit (3.05-3) unstable; urgency=medium
+
+  * /etc/init.d/rc.local: correct filename for rc.shutdown. (Closes: #1019480)
+  * d/control: Remove lsb-base and update versioned sysvinit-utils dependencies.
+    Thanks Samuel Thibault. (Closes: #1019529)
+  * bootlogd: add lintian override for init.d-script-needs-depends-on-lsb-base.
+  * init-d-script: update comment with dependency requirement for
+    /lib/lsb/init-functions.
+
+ -- Mark Hindley <leepen@debian.org>  Mon, 12 Sep 2022 10:34:53 +0100
+
+sysvinit (3.05-2) unstable; urgency=medium
+
+  * d/changelog: add missing closes for #959860 in previous version.
+  * d/control: add Breaks/Replaces for manpages-fr (<< 4.15.0-9~) to avoid
+    bootlogd(8) conflict. (Closes: #1009915)
+
+ -- Mark Hindley <leepen@debian.org>  Fri, 09 Sep 2022 16:56:55 +0100
+
+sysvinit (3.05-1) experimental; urgency=medium
+
+  * New upstream version 3.05
+  * d/copyright: add missing entries and sort by date (Closes: #1014511).
+  * Support /etc/rc.shutdown based on patch from Patrik Schindler
+    <poc@pocnet.net> (Closes: #959860).
+  * Take over library scripts from lsb-base.
+  * sysvinit-utils: drop unnecessary lsb-base dependency (Closes: #946399).
+  * Include upstream translated manpages and divert systemd equivalents in
+    manapages-{de,es,fi,fr,hu,id,pl} (Closes: #1009915).
+
+ -- Mark Hindley <leepen@debian.org>  Wed, 24 Aug 2022 13:05:57 +0100
+
+sysvinit (3.04-1) unstable; urgency=medium
+
+  * New upstream version 3.04
+  * Bracket lintian overrides.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Wed, 03 Aug 2022 12:49:34 +0200
+
+sysvinit (3.03-1) unstable; urgency=medium
+
+  * New upstream version 3.03
+  * Remove patch applied upstream.
+  * mount-functions.sh: add PARTUUID and PARTLABEL support. (Closes: #1008910)
+  * mount-functions.sh: Update comment describing read_fstab().
+
+ -- Mark Hindley <leepen@debian.org>  Fri, 15 Apr 2022 18:56:24 +0100
+
+sysvinit (3.02-1) experimental; urgency=medium
+
+  * Change upstream to GitHub.
+  * New upstream version 3.02
+  * Refresh patches.
+  * Delete patch applied upstream.
+  * Add patch to fix groff formatting error in init.8.
+
+ -- Mark Hindley <leepen@debian.org>  Tue, 29 Mar 2022 16:00:24 +0100
+
+sysvinit (3.01-1) unstable; urgency=medium
+
+  * Update upstream signing key.
+  * New upstream version 3.01
+  * Remove patch applied upstream.
+
+ -- Mark Hindley <leepen@debian.org>  Tue, 14 Dec 2021 07:54:11 +0000
+
+sysvinit (3.00-2~exp1) experimental; urgency=medium
+
+  * Remove time served support for converting /etc/rc.local to conffile
+    (Closes: #987732).
+  * Provisional upstream patch to restore pidof reporting D processes
+    (Closes: #926896).
+
+ -- Mark Hindley <leepen@debian.org>  Sat, 23 Oct 2021 11:02:07 +0100
+
+sysvinit (3.00-1) unstable; urgency=medium
+
+  * New upstream version 3.00
+  * d/changelog: fix typo in previous version.
+
+ -- Mark Hindley <leepen@debian.org>  Thu, 23 Sep 2021 11:26:57 +0100
+
+sysvinit (3.00~beta-1) experimental; urgency=medium
+
+  [ Mark Hindley ]
+  * Add myself to uploaders.
+  * New upstream version 3.00~beta.
+  * d/patches: remove patch applied upstream.
+  * d/patches: refresh patches.
+  * initscripts: remove -t option from telinit invocation (Closes:
+    #990019).
+  * bootmisc.sh: set SE Linux context after utmp file creation. Thanks to
+    Russell Coker. (Closes: #950459)
+  * Remove obsolete lintian overrides.
+  * Update to Standards Version 4.6.0 (no changes).
+
+  [ Ian Jackson ]
+  * mountkernfs.sh: mount /sys/firmware/efi/efivars if possible (Closes:
+    #783990).
+
+  [ Dr. Tobias Quathamer ]
+  * Rename manpage tmpfs.5 to tmpfs-config.5 (Closes: #848121, #951596).
+
+  [ Trek ]
+  * init-d-script: fix PIDFILE argument to status_of_proc (Closes: #962649).
+  * init-d-script: allow disabling --exec or --name options.
+  * init-d-script: fix do_status when DAEMON=none.
+  * init-d-script: policy compliant exit values (Closes: #968038).
+  * init-d-script: fix force-reload if do_reload is an alias.
+  * init-d-script: added do_reload_cmd interface.
+  * init-d-script: added RELOAD_SIGNAL interface.
+    Thanks to Robbie Harwood <rharwood@club.cc.cmu.edu> (Closes: #807311).
+  * init-d-script: send SIGCONT after SIGTERM.
+    Thanks to Jan Braun <janbraun@gmx.de>.
+  * init-d-script: fix try-restart output and more verbosity.
+  * init-d-script: /bin/sh as interpreter and small optimizations.
+
+ -- Mark Hindley <leepen@debian.org>  Wed, 15 Sep 2021 11:19:13 +0100
 
 sysvinit (2.96-7) unstable; urgency=medium
 
@@ -4306,7 +4486,7 @@ sysvinit (2.86.ds1-2) unstable; urgency=low
     #314351, #316431, #317385, #317704, #318453, #318857, #323749,
     #325933, #326460, #326495, #326647)
 
- -- Petter Reinholdtsen <pere@debian.org>  Sat, 11 Sep 2005 17:46:54 +0200
+ -- Petter Reinholdtsen <pere@debian.org>  Sun, 11 Sep 2005 17:46:54 +0200
 
 sysvinit (2.86.ds1-1.2) unstable; urgency=low
 

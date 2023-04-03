@@ -32,8 +32,8 @@ selinux_enabled () {
 }
 
 # Read /etc/fstab, looking for:
-# 1) The root filesystem, resolving LABEL=*|UUID=* entries to the
-#	device node,
+# 1) The root filesystem, resolving LABEL=*|UUID=*|PARTUUID=*|PARTLABEL=* entries
+#	to the device node,
 # 2) Swap that is on a md device or a file that may be on a md
 #	device,
 _read_fstab () {
@@ -58,7 +58,7 @@ _read_fstab () {
 					;;
 				  /dev/*)
 					;;
-				  LABEL=*|UUID=*)
+				  LABEL=*|UUID=*|PARTUUID=*|PARTLABEL=*)
 					if [ "$MTPT" = "/" ] && [ -x /sbin/findfs ]
 					then
 						DEV="$(findfs "$DEV")"
@@ -87,11 +87,17 @@ _read_fstab () {
 	done
 }
 
-# Read /etc/fstab, looking for:
-# 1) The root filesystem, resolving LABEL=*|UUID=* entries to the
-#	device node,
-# 2) Swap that is on a md device or a file that may be on a md
-#	device,
+# Parse /etc/fstab and set variables relating to:
+# 1) The root filesystem:
+#    - rootdev
+#    - fstabroot
+#    - rootopts
+#    - roottype
+#    - rootcheck
+#    - rootmode
+# 2) Swap:
+#    - swap_on_file
+#    - swap_on_lv
 
 read_fstab () {
 	eval "$(_read_fstab)"
@@ -206,6 +212,11 @@ domount () {
 		case "$KERNEL" in
 			*)	FSTYPE=$PRIFSTYPE ;;
 		esac
+	elif [ "$PRIFSTYPE" = efivarfs ]; then
+		# accept efivarfs if its mountpoint exists; kernel will auto-load the module
+		if test -d /sys/firmware/efi/efivars; then
+			FSTYPE=$PRIFSTYPE
+		fi
 	elif grep -E -qs "$PRIFSTYPE\$" /proc/filesystems; then
 		FSTYPE=$PRIFSTYPE
 	elif grep -E -qs "$ALTFSTYPE\$" /proc/filesystems; then

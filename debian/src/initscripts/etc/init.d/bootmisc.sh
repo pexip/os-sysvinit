@@ -35,6 +35,7 @@ do_start () {
 	if > "${utmp}" ; then
 		chgrp utmp "${utmp}" || log_warning_msg "failed to chgrp ${utmp}"
 		chmod 664  "${utmp}" || log_warning_msg "failed to chmod ${utmp}"
+		[ -x /sbin/restorecon ] && /sbin/restorecon "${utmp}"
 		return 0
 	else
 		log_failure_msg "failed to truncate ${utmp}"

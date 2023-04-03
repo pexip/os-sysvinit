@@ -51,7 +51,6 @@
 #ifdef __linux__
 #  include <sys/statfs.h>
 #  include <sys/mount.h>
-#  include <linux/fs.h>
 #  include <linux/magic.h>
 #  include <linux/major.h>
 #  ifndef TMPFS_MAGIC
@@ -790,7 +789,7 @@ void sushell(struct passwd *pwd)
 	execl(BINSH, profile ? "-sh" : "sh", NULL);
 	perror(BINSH);
 
-	/* Fall back to staticly linked shell if both the users shell
+	/* Fall back to statically linked shell if both the users shell
 	   and /bin/sh failed to execute. */
 	setenv("SHELL", STATICSH, 1);
 	execl(STATICSH, STATICSH, NULL);
