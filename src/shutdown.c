@@ -777,31 +777,41 @@ int main(int argc, char **argv)
 	if (!strcmp(when, "now")) strcpy(when, "0");
 
         sp = when;
-	if (when[0] == '+') sp++;
-	/* Decode shutdown time. */
+	/* Validate time argument. */
 	for ( ; *sp; sp++) {
-		if (*sp != ':' && (*sp < '0' || *sp > '9'))
+		if (*sp != '+' && *sp != ':' && (*sp < '0' || *sp > '9'))
 			usage();
 	}
+	sp = when;
+	/* Decode shutdown time. */
+	if (when[0] == '+') sp++;
 	if (strchr(when, ':') == NULL) {
 		/* Time in minutes. */
-		wt = atoi(when);
-		if (wt == 0 && when[0] != '0') usage();
+		wt = atoi(sp);
+		if (wt == 0 && sp[0] != '0') usage();
 	} else {
-		/* Time in hh:mm format. */
 		if (sscanf(when, "%d:%2d", &hours, &mins) != 2) usage();
-		if (hours > 23 || mins > 59) usage();
-		time(&t);
-		lt = localtime(&t);
-		wt = (60*hours + mins) - (60*lt->tm_hour + lt->tm_min);
-		if (wt < 0) wt += 1440;
+		/* Time in hh:mm format. */
+		if (when[0] == '+') {
+			/* Hours and minutes from now */
+			if (hours > 99999 || mins > 59) usage();
+			wt = (60*hours + mins);
+			if (wt < 0) usage();
+		} else {
+			/* Time of day */
+			if (hours > 23 || mins > 59) usage();
+			time(&t);
+			lt = localtime(&t);
+			wt = (60*hours + mins) - (60*lt->tm_hour + lt->tm_min);
+			if (wt < 0) wt += 1440;
+		}
 	}
 	/* Shutdown NOW if time == 0 */
 	if (wt == 0) issue_shutdown(halttype);
 
         /* Rather than loop and reduce wt (wait time) once per minute,
            we shall check the current time against the target time.
-           Then calculate the remaining wating time based on the difference
+           Then calculate the remaining waiting time based on the difference
            between current time and target time.
            This avoids missing shutdown time (target time) after the
            computer has been asleep. -- Jesse

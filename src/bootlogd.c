@@ -45,6 +45,10 @@
 #include <pty.h>
 #endif
 
+#if defined (__linux__) || defined(__GNU__)
+#include <sys/sysmacros.h>
+#endif
+
 #ifdef __FreeBSD__
 #include <termios.h>
 #include <libutil.h>
@@ -107,12 +111,26 @@ void handler(int sig)
 
 
 /*
+ *	chdir with error message on fail.
+ */
+static int chdir_int(const char *path)
+{
+	int ret;
+
+	if ((ret = chdir(path)) != 0) {
+		const char *msgprefix = "bootlogd: %s";
+		char msg[PATH_MAX + sizeof(msgprefix)];
+		snprintf(msg, sizeof(msg), msgprefix, path);
+ 	        perror(msg);
+	}
+
+	return ret;
+}
+ 
+
+/*
  *	Scan /dev and find the device name.
  */
-/*
-This function does not appear to be called anymore. Commenting it
-out for now, can probably be removed entirely in the future.
-
 static int findtty(char *res, const char *startdir, int rlen, dev_t dev)
 {
 	DIR		*dir;
@@ -121,13 +139,8 @@ static int findtty(char *res, const char *startdir, int rlen, dev_t dev)
 	int		r = -1;
 	char *olddir = getcwd(NULL, 0);
 
-	if (chdir(startdir) < 0 || (dir = opendir(".")) == NULL) {
-		int msglen = strlen(startdir) + 11;
-		char *msg = malloc(msglen);
-		snprintf(msg, msglen, "bootlogd: %s", startdir);
-		perror(msg);
-		free(msg);
-		chdir(olddir);
+	if (chdir_int(startdir) < 0 || (dir = opendir(".")) == NULL) {
+		chdir_int(olddir);
 		return -1;
 	}
 	while ((ent = readdir(dir)) != NULL) {
@@ -142,7 +155,7 @@ static int findtty(char *res, const char *startdir, int rlen, dev_t dev)
 			free(path);
 			if (0 == r) { 
 				closedir(dir);
-				chdir(olddir);
+				chdir_int(olddir);
 				return 0;
 			}
 			continue;
@@ -153,22 +166,21 @@ static int findtty(char *res, const char *startdir, int rlen, dev_t dev)
 			if ( (int) (strlen(ent->d_name) + strlen(startdir) + 1) >= rlen) {
 				fprintf(stderr, "bootlogd: console device name too long\n");
 				closedir(dir);
-				chdir(olddir);
+				chdir_int(olddir);
 				return -1;
 			} else {
 				snprintf(res, rlen, "%s/%s", startdir, ent->d_name);
 				closedir(dir);
-				chdir(olddir);
+				chdir_int(olddir);
 				return 0;
 			}
 		}
 	}
 	closedir(dir);
 
-	chdir(olddir);
+	chdir_int(olddir);
 	return r;
 }
-*/
 
 
 
@@ -212,6 +224,22 @@ int findpty(int *master, int *slave, char *name)
 
 	return 0;
 }
+
+static int istty(const char *dev)
+{
+	int fd, ret;
+
+	fd = open(dev, O_RDONLY|O_NONBLOCK);
+	if (fd < 0)
+		return 0;
+
+	ret = isatty(fd);
+
+	close(fd);
+
+	return ret;
+}
+
 /*
  *	See if a console taken from the kernel command line maps
  *	to a character device we know about, and if we can open it.
@@ -228,7 +256,7 @@ int isconsole(char *s, char *res, int rlen)
 		l = strlen(c->cmdline);
 		if (sl <= l) continue;
 		p = s + l;
-		if (strncmp(s, c->cmdline, l) != 0 || !isdigit(*p))
+		if (strncmp(s, c->cmdline, l) != 0)
 			continue;
 		for (i = 0; i < 2; i++) {
 			snprintf(res, rlen, i ? c->dev1 : c->dev2, p);
@@ -239,6 +267,13 @@ int isconsole(char *s, char *res, int rlen)
 			}
 		}
 	}
+
+	/* Fallback: accept any TTY device */
+	snprintf(res, rlen, "/dev/%s", s);
+	if ((q = strchr(res, ',')) != NULL) *q = 0;
+	if (istty(res))
+		return 1;
+
 	return 0;
 }
 
@@ -249,7 +284,7 @@ int isconsole(char *s, char *res, int rlen)
 int consolenames(struct real_cons *cons, int max_consoles)
 {
 #ifdef TIOCGDEV
-	/* This appears to be unused.  unsigned int	kdev; */
+	unsigned int	kdev;
 #endif
 	struct stat	st, st2;
 	char		buf[KERNEL_COMMAND_LENGTH];
@@ -318,6 +353,32 @@ int consolenames(struct real_cons *cons, int max_consoles)
 		}
 dontuse:
 		p--;
+	}
+
+	if (num_consoles > 0) return num_consoles;
+#endif
+	fstat(0, &st);
+	if (major(st.st_rdev) != 5 || minor(st.st_rdev) != 1) {
+		/*
+		 *	Old kernel, can find real device easily.
+		 */
+		int r = findtty(cons[num_consoles].name, "/dev", 
+                                sizeof(cons[num_consoles].name), st.st_rdev);
+		if (!r)
+			num_consoles++;
+	}
+
+	if (num_consoles > 0) return num_consoles;
+
+#ifdef TIOCGDEV
+# ifndef  ENOIOCTLCMD
+#  define ENOIOCTLCMD	515
+# endif
+	if (ioctl(0, TIOCGDEV, &kdev) == 0) {
+		int r = findtty(cons[num_consoles].name, "/dev", 
+                                sizeof(cons[num_consoles].name), (dev_t)kdev);
+		if (!r)
+			num_consoles++;
 	}
 
 	if (num_consoles > 0) return num_consoles;
