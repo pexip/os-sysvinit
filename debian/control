@@ -8,14 +8,15 @@ XSBC-Pexip-Original-Uploaders:
  Benda Xu <heroxbd@gentoo.org>,
  Adam Borowski <kilobyte@angband.pl>,
  Vincenzo (KatolaZ) Nicosia <katolaz@freaknet.org>,
+ Mark Hindley <leepen@debian.org>,
 Build-Depends:
- debhelper-compat (= 12),
- libcrypt-dev,
+ debhelper-compat (= 13),
  libselinux1-dev [linux-any],
  po-debconf,
+ po4a,
 Rules-Requires-Root: no
-Standards-Version: 4.5.0
-Homepage: https://savannah.nongnu.org/projects/sysvinit
+Standards-Version: 4.6.2
+Homepage: https://github.com/slicer69/sysvinit
 Vcs-Git: https://salsa.debian.org/debian/sysvinit.git
 Vcs-Browser: https://salsa.debian.org/debian/sysvinit
 XS-Pexip-Upstream: http://deb.debian.org/debian/ bookworm
@@ -33,10 +34,21 @@ Depends:
 Conflicts:
  systemd-sysv,
  runit-init,
+Breaks:
+ manpages-es (<< 4.15.0-9~),
+ manpages-fr (<< 4.15.0-9~),
+ manpages-de (<< 4.15.0-9~),
+ manpages-hu (<< 1:4.15.0-9~),
+ manpages-pl (<< 1:4.15.0-9~),
 Replaces:
  systemd-sysv,
  sysvinit (<< 2.88dsf-44~),
  runit-init,
+ manpages-es (<< 4.15.0-9~),
+ manpages-fr (<< 4.15.0-9~),
+ manpages-de (<< 4.15.0-9~),
+ manpages-hu (<< 1:4.15.0-9~),
+ manpages-pl (<< 1:4.15.0-9~),
 Suggests:
  bootlogd,
 Recommends:
@@ -56,23 +68,27 @@ Essential: yes
 Architecture: any
 Multi-Arch: foreign
 Depends:
- lsb-base (>= 11.0.0~),
  ${misc:Depends},
  ${shlibs:Depends},
+Conflicts: lsb-base (<< 11.3~)
+Provides: lsb-base (= 11.1.0)
+Replaces: lsb-base
 Description: System-V-like utilities
  This package contains the important System-V-like utilities.
  .
  Specifically, this package includes:
  init-d-script, fstab-decode, killall5, pidof
+ .
+ It also contains the library scripts sourced by init-d-script and other
+ initscripts that were formally in lsb-base.
 
 Package: sysv-rc
 Architecture: all
 Multi-Arch: foreign
 Depends:
  insserv,
- lsb-base,
  startpar (>= 0.62-1~),
- sysvinit-utils (>= 2.86.ds1-62),
+ sysvinit-utils (>= 3.05-1),
  ${misc:Depends},
 Description: System-V-like runlevel change mechanism
  This package provides support for the System-V like system
@@ -83,7 +99,7 @@ Package: initscripts
 Architecture: all
 Multi-Arch: foreign
 Depends:
- lsb-base,
+ sysvinit-utils (>= 3.05-1),
  sysv-rc | file-rc | openrc,
  ${misc:Depends},
 Recommends:
@@ -96,9 +112,11 @@ Description: scripts for initializing and shutting down the system
 Package: bootlogd
 Architecture: any
 Depends:
- lsb-base,
+ sysvinit-utils (>= 3.05-1),
  ${misc:Depends},
  ${shlibs:Depends},
+Breaks: manpages-fr (<< 4.15.0-9~),
+Replaces: manpages-fr (<< 4.15.0-9~),
 Description: daemon to log boot messages
  bootlogd logs all messages printed to the system console during system boot,
  and records those messages to a logfile.

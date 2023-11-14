@@ -8,11 +8,9 @@ Thanks: Svante Signell <svante.signell@gmail.com>
  src/sulogin.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/src/sulogin.c b/src/sulogin.c
-index 4200f8e..bccd92a 100644
 --- a/src/sulogin.c
 +++ b/src/sulogin.c
-@@ -146,7 +146,7 @@ void tcinit(struct console *con)
+@@ -146,7 +146,7 @@
  		cfsetispeed(tio, ispeed);
  		cfsetospeed(tio, ospeed);
  

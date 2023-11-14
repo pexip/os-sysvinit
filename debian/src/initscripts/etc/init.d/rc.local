@@ -23,6 +23,16 @@ do_start() {
 	fi
 }
 
+do_stop() {
+	if [ -x /etc/rc.shutdown ]; then
+	        [ "$VERBOSE" != no ] && log_begin_msg "Running local shutdown scripts (/etc/rc.shutdown)"
+		/etc/rc.shutdown
+		ES=$?
+		[ "$VERBOSE" != no ] && log_end_msg $ES
+		return $ES
+	fi
+}
+
 case "$1" in
     start)
 	do_start
@@ -31,8 +41,12 @@ case "$1" in
         echo "Error: argument '$1' not supported" >&2
         exit 3
         ;;
-    stop|status)
+    status)
         # No-op
+        exit 0
+        ;;
+    stop)
+	do_stop
         exit 0
         ;;
     *)

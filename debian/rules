@@ -16,6 +16,8 @@ LC_ALL	= POSIX
 INSTALL_DATA = install -m 644
 INSTALL      = install -m 755
 
+derives_from_ubuntu := $(shell (dpkg-vendor --derives-from Ubuntu && echo "yes") || echo "no")
+
 # Handle cross builds
 ifneq ($(DEB_HOST_GNU_TYPE),$(DEB_BUILD_GNU_TYPE))
 CROSS=CC=$(DEB_HOST_GNU_TYPE)-gcc
@@ -31,6 +33,7 @@ DH_OPTIONS =
 
 override_dh_auto_build:
 	$(MAKE) $(CROSS) $(CONFFLAGS) DISTRO=Debian LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH) CFLAGS="$(CFLAGS) $(CPPFLAGS)" LDFLAGS="$(LDFLAGS)"
+
 
 override_dh_auto_install-arch:
 	$(MAKE) -C src $(CROSS) ROOT=$(tmp) DISTRO=Debian install
@@ -60,6 +63,12 @@ override_dh_install-arch:
 	# initscripts package may include /sys
 ifneq (,$(findstring $(DEB_HOST_ARCH_OS),linux kfreebsd))
 	$(INSTALL) -d $(inittmp)/sys
+endif
+
+ifeq ($(derives_from_ubuntu),yes)
+ifneq (,$(findstring lsb-base, $(shell dh_listpackages)))
+	cp -p debian/src/lsb-base/init-functions.d/50-ubuntu-logging debian/lsb-base/lib/lsb/init-functions.d/
+endif
 endif
 
 install-arch: build-arch

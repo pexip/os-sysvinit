@@ -14,7 +14,7 @@ PATH=/sbin:/bin
 
 do_start () {
 	log_action_msg "Will now switch to single-user mode"
-	exec init -t1 S
+	exec telinit S
 }
 
 case "$1" in

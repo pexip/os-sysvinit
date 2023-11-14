@@ -52,6 +52,14 @@ mount_filesystems () {
 		domount "$MNTMODE" pstore "" /sys/fs/pstore pstore ""
 	fi
 
+	#
+	# Mount efivarfs on /sys/firmware/efi/efivars if necessary
+	#
+	efivarsmnt=/sys/firmware/efi/efivars
+	if test -d $efivarsmnt; then
+		# domount is a no-op if already mounted
+		domount "$MNTMODE" efivarfs "" $efivarsmnt none ""
+	fi
 }
 
 case "$1" in

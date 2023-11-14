@@ -13,7 +13,7 @@
 Version information is not placed in the top-level Makefile by default
 */
 #ifndef VERSION
-#define VERSION "2.94"
+#define VERSION "3.01"
 #endif
 /*
  *		This file is part of the sysvinit suite,
@@ -63,6 +63,11 @@ Version information is not placed in the top-level Makefile by default
 #include <sys/ttydefaults.h>
 #include <sys/syslog.h>
 #include <sys/time.h>
+/*
+ * inittab.d
+ */
+#include <sys/types.h>
+#include <dirent.h>
 
 #ifdef WITH_SELINUX
 #  include <selinux/selinux.h>
@@ -536,7 +541,7 @@ int receive_state(int fd)
 __attribute__ ((format (printf, 1, 2)))
 #endif
 #endif
-/* This function already exists on FreeBSD. No need to delcare it. */
+/* This function already exists on FreeBSD. No need to declare it. */
 #ifndef __FreeBSD__
 static int setproctitle(char *fmt, ...)
 {
@@ -732,7 +737,7 @@ void coredump(void)
 
 /*
  *	OOPS: segmentation violation!
- *	If we have the info, print where it occured.
+ *	If we have the info, print where it occurred.
  *	Then sleep 30 seconds and try to continue.
  */
 static
@@ -1092,10 +1097,12 @@ pid_t spawn(CHILD *ch, int *res)
 			break;
 		}
 	}
+        if (proc[0] == '@') proc++;    /*skip leading backslash */
 	args[6] = proc;
 	args[7] = NULL;
-  } else if (strpbrk(proc, "~`!$^&*()=|\\{}[];\"'<>?")) {
+  } else if ( (strpbrk(proc, "~`!$^&*()=|\\{}[];\"'<>?")) && (proc[0] != '@') ){
   /* See if we need to fire off a shell for this command */
+  /* Do not launch shell if first character in proc string is an at symbol  */
   	/* Give command line to shell */
   	args[1] = SHELL;
   	args[2] = "-c";
@@ -1106,6 +1113,7 @@ pid_t spawn(CHILD *ch, int *res)
   } else {
 	/* Split up command line arguments */
 	buf[0] = 0;
+        if (proc[0] == '@') proc++;
   	strncat(buf, proc, sizeof(buf) - 1);
   	ptr = buf;
   	for(f = 1; f < 15; f++) {
@@ -1307,7 +1315,7 @@ pid_t spawn(CHILD *ch, int *res)
 
 	if (pid == -1) {
 		initlog(L_VB, "cannot fork, retry..");
-		do_msleep(SHORT_SLEEP);
+	do_msleep(SHORT_SLEEP);
 		continue;
 	}
 	return(pid);
@@ -1431,6 +1439,7 @@ static
 void read_inittab(void)
 {
   FILE		*fp;			/* The INITTAB file */
+  FILE		*fp_tab;		/* The INITTABD files */
   CHILD		*ch, *old, *i;		/* Pointers to CHILD structure */
   CHILD		*head = NULL;		/* Head of linked list */
 #ifdef INITLVL
@@ -1448,7 +1457,10 @@ void read_inittab(void)
   int		round;			/* round 0 for SIGTERM, 1 for SIGKILL */
   int		foundOne = 0;		/* No killing no sleep */
   int		talk;			/* Talk to the user */
-  int		done = 0;		/* Ready yet? */
+  int		done = -1;		/* Ready yet? , 2 level : -1 nothing done, 0 inittab done, 1 inittab and inittab.d done */
+  DIR 		*tabdir=NULL;		/* the INITTAB.D dir */
+  struct dirent *file_entry;		/* inittab.d entry */
+  char 		f_name[272];		/* size d_name + strlen /etc/inittad.d/ */
 
 #if DEBUG
   if (newFamily != NULL) {
@@ -1464,22 +1476,71 @@ void read_inittab(void)
   if ((fp = fopen(INITTAB, "r")) == NULL)
 	initlog(L_VB, "No inittab file found");
 
-  while(!done) {
+  /*
+   *  Open INITTAB.D directory 
+   */
+  if( (tabdir = opendir(INITTABD))==NULL)
+	  initlog(L_VB, "No inittab.d directory found");
+
+  while(done!=1) {
 	/*
 	 *	Add single user shell entry at the end.
 	 */
-	if (fp == NULL || fgets(buf, sizeof(buf), fp) == NULL) {
-		done = 1;
-		/*
-		 *	See if we have a single user entry.
-		 */
-		for(old = newFamily; old; old = old->next)
-			if (strpbrk(old->rlevel, "S")) break;
-		if (old == NULL)
-			snprintf(buf, sizeof(buf), "~~:S:wait:%s\n", SULOGIN);
-		else
+	if(done == -1) {
+		if (fp == NULL || fgets(buf, sizeof(buf), fp) == NULL) {
+			done = 0;
+			/*
+			 *	See if we have a single user entry.
+			 */
+			for(old = newFamily; old; old = old->next)
+				if (strpbrk(old->rlevel, "S"))  break;
+			if (old == NULL)
+				snprintf(buf, sizeof(buf), "~~:S:wait:%s\n", SULOGIN);
+			else
+				continue;
+		}
+	} /* end if( done==-1) */
+	else if ( done == 0 ){
+		/* parse /etc/inittab.d and read all .tab files */
+		if(tabdir!=NULL){
+			if( (file_entry = readdir(tabdir))!=NULL){
+				/* ignore files not like *.tab */
+				if (!strcmp(file_entry->d_name, ".") || !strcmp(file_entry->d_name, ".."))
+					continue;
+				if (strlen(file_entry->d_name) < 5 || strcmp(file_entry->d_name + strlen(file_entry->d_name) - 4, ".tab"))
+					continue;
+				/*
+				 * initialize filename
+				 */
+				memset(f_name,0,sizeof(char)*272);
+				snprintf(f_name,272,"/etc/inittab.d/%s",file_entry->d_name);
+				initlog(L_VB, "Reading: %s",f_name);
+				/*
+				 * read file in inittab.d only one entry per file
+				 */
+				if ((fp_tab = fopen(f_name, "r")) == NULL)
+					continue;
+				/* read the file while the line contain comment */
+				while( fgets(buf, sizeof(buf), fp_tab) != NULL) {
+					for(p = buf; *p == ' ' || *p == '\t'; p++);
+					if (*p != '#' && *p != '\n')
+						break;
+				}
+				fclose(fp_tab);
+				/* do some checks */
+				if( strlen( p  ) == 0 )
+					continue;
+			} /* end of readdir, all is done */
+			else { 
+				done = 1;
+				continue;
+			}
+		} /* end of if(tabdir!=NULL) */
+		else {
+			done = 1;
 			continue;
-	}
+		}
+	} /* end of if ( done == 0 ) */
 	lineNo++;
 	/*
 	 *	Skip comments and empty lines
@@ -1630,10 +1691,12 @@ void read_inittab(void)
 			break;
 		}
   }
+
   /*
    *	We're done.
    */
   if (fp) fclose(fp);
+  if(tabdir) closedir(tabdir);
 
 #ifdef __linux__
   check_kernel_console();
