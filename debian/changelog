@@ -1,3 +1,9 @@
+sysvinit (3.06-4pexip1) pexip-bookworm; urgency=medium
+
+  * Initial bookworm build
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Thu, 16 Nov 2023 10:34:26 +0000
+
 sysvinit (3.06-4) unstable; urgency=medium
 
   * Add Romanian debconf translations with thanks to Remus-Gabriel Chelu
