@@ -40,8 +40,8 @@ endif
 
 ifeq ($(DISTRO),Debian)
 CPPFLAGS+= -DACCTON_OFF
-SBIN	+= bootlogd
-MAN8	+= bootlogd.8
+SBIN	+= sulogin bootlogd
+MAN8	+= sulogin.8 bootlogd.8
 MANDB	:=
 endif
 
@@ -65,9 +65,6 @@ BIN	+= mountpoint
 MAN1	+= mountpoint.1
 endif
 
-MANPAGES:=$(MAN1) $(MAN5) $(MAN8)
-MANPAGES+=$(subst ../man/,,$(foreach man,$(MANPAGES),$(wildcard ../man/??/$(man))))
-
 ID		= $(shell id -u)
 BIN_OWNER	= root
 BIN_GROUP	= root
@@ -79,8 +76,16 @@ else
   INSTALL_EXEC	= install -m 755
   INSTALL_DATA	= install -m 644
 endif
-INSTALL_DIR	= install -m 755 -d
-MANDIR		= /usr/share/man
+INSTALL_DIR	= install -m 755 -d 
+
+ROOT         ?= $(DESTDIR)
+usrdir       ?= /usr
+base_bindir  ?= /bin
+base_sbindir ?= /sbin
+bindir       ?= /$(usrdir)/bin
+sysconfdir   ?= /etc
+includedir   ?= /$(usrdir)/include
+mandir       ?= /$(usrdir)/share/man
 
 ifeq ($(WITH_SELINUX),yes)
   SELINUX_DEF	=  -DWITH_SELINUX
@@ -92,15 +97,13 @@ else
   SULOGINLIBS	=
 endif
 
-ROOT	?= $(DESTDIR)
-
 # Additional libs for GNU libc.
-ifneq ($(wildcard $(ROOT)/usr/lib*/libcrypt.*),)
+ifneq ($(wildcard $(ROOT)/$(usrdir)/lib*/libcrypt.*),)
   SULOGINLIBS	+= -lcrypt
 endif
 
 # Additional libs for GNU libc / multiarch on Debian based systems.
-ifneq ($(wildcard $(ROOT)/usr/lib/*/libcrypt.*),)
+ifneq ($(wildcard $(ROOT)/$(usrdir)/lib/*/libcrypt.*),)
 ifneq ($(findstring -lcrypt, $(SULOGINLIBS)), -lcrypt)
   SULOGINLIBS	+= -lcrypt
 endif
@@ -196,34 +199,48 @@ clobber:	cleanobjs
 distclean:	clobber
 
 install:	all
-		$(INSTALL_DIR) $(ROOT)/bin/ $(ROOT)/sbin/
-		$(INSTALL_DIR) $(ROOT)/usr/bin/
+		$(INSTALL_DIR) $(ROOT)$(base_bindir)/ $(ROOT)$(base_sbindir)/
+		$(INSTALL_DIR) $(ROOT)$(bindir)/
 		for i in $(BIN); do \
-			$(INSTALL_EXEC) $$i $(ROOT)/bin/ ; \
+			$(INSTALL_EXEC) $$i $(ROOT)$(base_bindir)/ ; \
 		done
 		for i in $(SBIN); do \
-			$(INSTALL_EXEC) $$i $(ROOT)/sbin/ ; \
+			$(INSTALL_EXEC) $$i $(ROOT)$(base_sbindir)/ ; \
 		done
 		for i in $(USRBIN); do \
-			$(INSTALL_EXEC) $$i $(ROOT)/usr/bin/ ; \
+			$(INSTALL_EXEC) $$i $(ROOT)$(bindir)/ ; \
 		done
-		# $(INSTALL_DIR) $(ROOT)/etc/
-		$(INSTALL_DIR) $(ROOT)/etc/inittab.d
-		# $(INSTALL_EXEC) ../doc/initscript.sample $(ROOT)/etc/
-		ln -sf halt $(ROOT)/sbin/reboot
-		ln -sf halt $(ROOT)/sbin/poweroff
-		ln -sf init $(ROOT)/sbin/telinit
-		ln -sf ../sbin/killall5 $(ROOT)/bin/pidof
-		if [ ! -f $(ROOT)/usr/bin/lastb ]; then \
-			ln -sf last $(ROOT)/usr/bin/lastb; \
+		# $(INSTALL_DIR) $(ROOT)/$(sysconfdir)/
+		$(INSTALL_DIR) $(ROOT)/$(sysconfdir)/inittab.d
+		# $(INSTALL_EXEC) ../doc/initscript.sample $(ROOT)/$(sysconfdir)/
+		ln -sf halt $(ROOT)$(base_sbindir)/reboot
+		ln -sf halt $(ROOT)$(base_sbindir)/poweroff
+		ln -sf init $(ROOT)$(base_sbindir)/telinit
+		ln -sf $(base_sbindir)/killall5 $(ROOT)$(base_bindir)/pidof
+		if [ ! -f $(ROOT)$(bindir)/lastb ]; then \
+			ln -sf last $(ROOT)$(bindir)/lastb; \
 		fi
-		$(INSTALL_DIR) $(ROOT)/usr/include/
-		$(INSTALL_DATA) initreq.h $(ROOT)/usr/include/
-		for man in $(MANPAGES) ; do \
-		    targetdir=$(ROOT)$(MANDIR)/$$(dirname $$man)/man$${man##*.}; \
-		    $(INSTALL_DIR) $$targetdir; \
-		    $(INSTALL_DATA) ../man/$$man $$targetdir/$$(basename $$man); \
-		    sed -i "1{ $(MANDB); }" $$targetdir/$$(basename $$man); \
+		$(INSTALL_DIR) $(ROOT)$(includedir)/
+		$(INSTALL_DATA) initreq.h $(ROOT)$(includedir)/
+		for lang in  '' $(patsubst ../man/po/%.po,%,$(wildcard ../man/po/??.po)); do \
+			$(INSTALL_DIR) $(ROOT)$(mandir)/$$lang/man1; \
+			$(INSTALL_DIR) $(ROOT)$(mandir)/$$lang/man5; \
+			$(INSTALL_DIR) $(ROOT)$(mandir)/$$lang/man8; \
+		done
+		for man in $(MAN1) $(subst ../man/,,$(foreach man,$(MAN1),$(wildcard ../man/??/$(man)))); do \
+			install_target=$(ROOT)$(mandir)/$${man%$${man##*/}}man1/$${man##*/} ; \
+			$(INSTALL_DATA) ../man/$$man $$install_target ; \
+			sed -i "1{ $(MANDB); }" $$install_target ; \
+		done
+		for man in $(MAN5) $(subst ../man/,,$(foreach man,$(MAN5),$(wildcard ../man/??/$(man)))); do \
+			install_target=$(ROOT)$(mandir)/$${man%$${man##*/}}man5/$${man##*/} ; \
+			$(INSTALL_DATA) ../man/$$man $$install_target ; \
+			sed -i "1{ $(MANDB); }" $$install_target ; \
+		done
+		for man in $(MAN8) $(subst ../man/,,$(foreach man,$(MAN8),$(wildcard ../man/??/$(man)))); do \
+			install_target=$(ROOT)$(mandir)/$${man%$${man##*/}}man8/$${man##*/} ; \
+			$(INSTALL_DATA) ../man/$$man $$install_target ; \
+			sed -i "1{ $(MANDB); }" $$install_target ; \
 		done
 ifeq ($(ROOT),)
 		#

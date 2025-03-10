@@ -1,3 +1,236 @@
+sysvinit (3.14-4) unstable; urgency=medium
+
+  * d/control: bump Standards Version (no changes).
+  * Take over /etc/init.d/kmod from src:kmod << 34.1-1 (Closes: #1100072).
+
+ -- Mark Hindley <leepen@debian.org>  Mon, 10 Mar 2025 16:49:51 +0000
+
+sysvinit (3.14-3) unstable; urgency=medium
+
+  * rcS: Default to ASYNCMOUNTNFS=no if ip= or nfsroot= specified on kernel
+    commandline. (Closes: #434570).
+  * if-up.d/mountnfs: only print waiting for interface message if VERBOSE.
+    (Closes: #578247)
+  * d/control:
+    - bump Standards Version (no changes).
+    - bootlogd Conflicts plymouth; they both log to /var/log/boot.log.
+      (Closes: #669017)
+  * d/sysvinit-core.NEWS: add instructions for forcing init switch despite
+    Protected: yes.
+
+ -- Mark Hindley <leepen@debian.org>  Mon, 24 Feb 2025 09:27:01 +0000
+
+sysvinit (3.14-2) experimental; urgency=medium
+
+  [ Mark Hindley ]
+  * mount-functions.sh: only warn about old /dev/shm mount if it is
+    actually present in /etc/fstab. (Closes: #761511)
+  * tmpfs-config.5: clarify that TMPFS_SIZE override requires empty string.
+    (Closes: #987316)
+  * checkroot.sh: create last-resort root device in /dev: /run may be
+    nodev or read-only. (Closes: #1008911)
+  * initscripts README.Debian: update to refer to /etc/default/tmpfs and
+    tmpfs(5).
+  * if-up.d/mountnfs: refactor to use /run and minimise time before
+    registering lockdir cleanup handler.
+  * Ensure stray /run/network/mountnfs lockdir is also cleaned.
+    (Closes: #608862)
+  * rcS(5): document requirement for auto rather than allow-hotplug
+    interfaces with ASYNCMOUNTNFS=no. (Closes: #612519)
+  * d/control: sysvinit-core add Protected: yes. (Closes: #940965)
+  * if-up.d/mountnfs: always no-op if systemd is running. (Closes: #782142).
+
+
+  [ Bjarni Ingi Gislason ]
+  * Bug#1095674: halt.5: Some remarks and a patch with editorial changes
+    for this man page (Closes: 1095674).
+
+  [ Pierre Ynard ]
+  * Bug#686531: Fix checkroot-bootclean.sh fails if rootfs is mounted
+    read-only via NFS (Closes: #686531).
+
+ -- Mark Hindley <leepen@debian.org>  Tue, 18 Feb 2025 08:23:45 +0000
+
+sysvinit (3.14-1) unstable; urgency=medium
+
+  [ Mark Hindley ]
+  * New upstream version 3.14
+  * d/p/0005-workaround-gcc-lintian.patch: drop as no longer applies
+    cleanly and lintian warning is no longer evident.
+
+  [ Helmut Grohne ]
+  * Build-Depends: libcrypt-dev. (Closes: #1094247)
+
+ -- Mark Hindley <leepen@debian.org>  Mon, 10 Feb 2025 09:38:57 +0000
+
+sysvinit (3.13-1) unstable; urgency=medium
+
+  * New upstream version 3.13, includes manpage fixes for init.8 and pidof.8
+    (Closes: #1087343, #1087584)
+  * d/sysvinit-core.postinst:
+    - drop remaining parts of /run/initctl migration: no longer HUP PID 1.
+      (Closes: #1092150)
+    - remove $DPKG_ROOT from directory test: nonsensical after previous test.
+
+ -- Mark Hindley <leepen@debian.org>  Tue, 07 Jan 2025 09:26:24 +0000
+
+sysvinit (3.11-1) unstable; urgency=medium
+
+  * New upstream version 3.11.
+    - includes manpage fixes (Closes: #905244, #1078731,
+      #1082812).
+  * Drop patch fixed upstream.
+
+ -- Mark Hindley <leepen@debian.org>  Wed, 23 Oct 2024 09:33:27 +0100
+
+sysvinit (3.10-3) unstable; urgency=medium
+
+  * init-d-script:
+    - support capabilities by wrapping s-s-d with setpriv.
+    - when stopping, send CONT signal before TERM.
+
+ -- Mark Hindley <leepen@debian.org>  Tue, 15 Oct 2024 18:46:37 +0100
+
+sysvinit (3.10-2) unstable; urgency=medium
+
+  * rc.local: fix misplaced stop levels in LSB header. (Closes: #1081435)
+
+ -- Mark Hindley <leepen@debian.org>  Wed, 11 Sep 2024 18:09:54 +0100
+
+sysvinit (3.10-1) unstable; urgency=medium
+
+  * New upstream version 3.10
+    - includes reformatting of shutdown.8 (Closes: #1076822).
+  * d/control: Update versioned Conflicts to handle DEP17 ineffective
+    diversions for more diverters.  Thanks to Helmut Grohne
+    <helmut@subdivi.de> (Closes: #1065146)
+
+ -- Mark Hindley <leepen@debian.org>  Tue, 06 Aug 2024 16:16:21 +0100
+
+sysvinit (3.09-2) unstable; urgency=medium
+
+  [ Mark Hindley ]
+  * bootlogd.init: fix path in check for running under systemd.
+    (Closes: #1072011)
+  * Declare interest in libc-upgrade trigger. (Closes: #1072375)
+  * d/sysvinit-core.postinst:
+    - refactor.
+    - remove obsolete /dev/initctl -> /run migration.
+    - support "triggered".
+  * d/control: bump Standards Version (no changes).
+
+  [ Thorsten Glaser <tg@mirbsd.de> ]
+  * Save initramfs fsck logs to /var/log/fsck/.
+
+ -- Mark Hindley <leepen@debian.org>  Thu, 13 Jun 2024 18:20:51 +0100
+
+sysvinit (3.09-1) unstable; urgency=medium
+
+  * New upstream version 3.09
+  * Drop patch applied upstream.
+  * /etc/init.d/rc.local: stop in runlevels 0 6 so rc.shutdown is run.
+  * d/control:
+    - add Salsa as Homepage for initscripts and sysv-rc.
+    - fix typo in sysvinit-utils description. (Closes: #1069177)
+
+ -- Mark Hindley <leepen@debian.org>  Wed, 17 Apr 2024 12:58:59 +0100
+
+sysvinit (3.08-7) unstable; urgency=medium
+
+  [ Johannes Schauer Marin Rodrigues ]
+  * sysvinit-core.postinst: remove code handling /etc/inittab with missing
+    entries (Closes: #1063629)
+  * initscripts.postinst: avoid calling uname for non-empty DPKG_ROOT
+    (Closes: #1063639)
+
+  [ Helmut Grohne ]
+  * DEP17: Move files to /usr. (Closes: #1060139)
+
+  [ Mark Hindley ]
+  * Delete unused debconf machinery now there are no templates (lintian).
+
+ -- Mark Hindley <leepen@debian.org>  Thu, 29 Feb 2024 11:22:45 +0000
+
+sysvinit (3.08-6) unstable; urgency=medium
+
+  * d/sysvinit-core.postinst: don't do_restart() for new installations.
+    (Closes: #1061280)
+
+ -- Mark Hindley <leepen@debian.org>  Thu, 25 Jan 2024 17:43:34 +0000
+
+sysvinit (3.08-5) unstable; urgency=medium
+
+  * Add Greek debconf translation with thanks to Dimitris
+    <dimitris@stinpriza.org>.
+  * hwclock.sh: support HURD direct ISA I/O. (Closes: #1057634)
+  * d/control: initscripts demote util-linux-extra to Recommends.
+  * Restore sequencing prefix 85 to hwclock rules file.
+
+
+ -- Mark Hindley <leepen@debian.org>  Wed, 06 Dec 2023 15:02:37 +0000
+
+sysvinit (3.08-4) experimental; urgency=medium
+
+  [ Guillem Jover ]
+  * initscripts: Set PATH in udev init script to include stat program.
+
+  [ Johannes Schauer Marin Rodrigues ]
+  * postinst: respect DPKG_ROOT environment variable (Closes: #1056213).
+
+  [ Mark Hindley ]
+  * Update Swedish debconf translation with thanks to Martin Bagge
+    <brother@persilja.net>.  (Closes: #1056954)
+
+ -- Mark Hindley <leepen@debian.org>  Mon, 27 Nov 2023 18:45:44 +0000
+
+sysvinit (3.08-3) unstable; urgency=medium
+
+  * Release to unstable
+
+ -- Mark Hindley <leepen@debian.org>  Mon, 09 Oct 2023 20:17:56 +0100
+
+sysvinit (3.08-2) experimental; urgency=medium
+
+  * initscripts: take over hwclock machinery from util-linux-extra
+    (Closes: #934463).
+
+ -- Mark Hindley <leepen@debian.org>  Sun, 01 Oct 2023 12:06:22 +0100
+
+sysvinit (3.08-1) unstable; urgency=medium
+
+  * New upstream version 3.08
+  * Add patch to fix man/Makefile clean recipe (Closes: #1047054).
+  * Takeover udev initscript from src:systemd (Closes: #1042082).
+
+ -- Mark Hindley <leepen@debian.org>  Sun, 17 Sep 2023 20:10:53 +0100
+
+sysvinit (3.07-1) unstable; urgency=medium
+
+  [ Olivier Gayot ]
+  * Drop manual trimming of Debian changelog
+  * Use dh_installchangelogs -X instead of deleting changelog manually
+  * Remove duplicate dh_installchangelogs for initscripts
+
+ -- Mark Hindley <leepen@debian.org>  Sat, 01 Jul 2023 08:43:15 +0100
+
+sysvinit (3.07-1~exp1) experimental; urgency=medium
+
+  [ Mark Hindley ]
+  * New upstream version 3.07
+     - includes Portuguese manpage translation (Closes: #1027945).
+  * Remove obsolete handling of /var/log/boot~ and restore rotation of
+    /var/log/boot (Closes: #1034069).
+  * brightness initscript: don't save value of 0 when stopping.
+  * Remove discontinued lintian tag init.d-script-needs-depends-on-lsb-base.
+  * Delete patches applied upstream.
+  * Refresh patches.
+
+  [ Olivier Gayot ]
+  * d/rules: fix installation of 50-ubuntu-logging when building on Ubuntu
+    (Closes: #1028586).
+
+ -- Mark Hindley <leepen@debian.org>  Mon, 01 May 2023 11:24:07 +0100
+
 sysvinit (3.06-4) unstable; urgency=medium
 
   * Add Romanian debconf translations with thanks to Remus-Gabriel Chelu

@@ -159,8 +159,8 @@ change from the defaults be necessary.
 .IP "\fBTMPFS_SIZE\fP"
 Maximum size for all tmpfs filesystems if no specific size is
 provided.  The default is \fB20%VM\fP (20% of virtual memory,
-including swap space).  If no value is provided here, the kernel
-default (50% RAM) will be used.  Note that the "%VM" suffix may be
+including swap space).  If this is explicitly set to an empty string, the
+kernel default (50% RAM) will be used.  Note that the "%VM" suffix may be
 used in this and all the _SIZE settings below, but may not be used in
 /etc/fstab (the absolute size is calculated by the init scripts).
 

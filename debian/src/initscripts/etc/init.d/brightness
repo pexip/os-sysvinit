@@ -67,6 +67,10 @@ do_stop() {
 	local label=$1 knob=$2 max=$3 file=$SAVEFILE_PREFIX${1:+.$1}
 	test -e "$knob" || return 0
 
+	# If the backlight is off, don't save to avoid blank display after
+	# reboot. See Devuan #617.
+	test "$(cat $knob)" -eq 0 && return 0
+
 	test x"$VERBOSE" = x"no" || \
 	    log_action_begin_msg Saving $label brightness level
 	cat "$knob" >"$file"

@@ -82,9 +82,15 @@ without asking for permission.
 .IP \fBASYNCMOUNTNFS\fP
 Set this to 'no' to disable asynchronous mounting of network drives
 when the network interfaces are mounted, and instead do it only once
-when the machine boots.  The default is 'yes'.  It is useful to
+when the machine boots.  The default is 'yes' unless ip= or nfsroot= is
+specified on the kernel command line.  It is useful to
 disable this on machines where the root file system is NFS, until ifup
 from ifupdown works properly in such setup.
+.IP
+Note that, in this case, the network interfaces to access the NFS host must be
+marked 'auto'
+.RB ( NOT " 'allow\-hotplug')"
+in \fB/etc/network/interfaces\fP.
 
 .SH NOTE
 The \fBEDITMOTD\fP, \fBRAMRUN\fP, \fBCONCURRENCY\fP and \fBUTC\fP variables are

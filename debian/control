@@ -10,11 +10,11 @@ Uploaders:
  Mark Hindley <leepen@debian.org>,
 Build-Depends:
  debhelper-compat (= 13),
+ libcrypt-dev,
  libselinux1-dev [linux-any],
- po-debconf,
  po4a,
 Rules-Requires-Root: no
-Standards-Version: 4.6.2
+Standards-Version: 4.7.2
 Homepage: https://github.com/slicer69/sysvinit
 Vcs-Git: https://salsa.debian.org/debian/sysvinit.git
 Vcs-Browser: https://salsa.debian.org/debian/sysvinit
@@ -32,6 +32,9 @@ Depends:
 Conflicts:
  systemd-sysv,
  runit-init,
+ molly-guard (<< 0.8.3~),
+ bfh-container (<< 20211009-24~),
+ progress-linux-container (<< 20221002-12~),
 Breaks:
  manpages-es (<< 4.15.0-9~),
  manpages-fr (<< 4.15.0-9~),
@@ -51,6 +54,7 @@ Suggests:
  bootlogd,
 Recommends:
  orphan-sysvinit-scripts,
+Protected: yes
 Description: System-V-like init
  This package contains programs required for booting
  a Debian system and doing basic process management.
@@ -78,9 +82,10 @@ Description: System-V-like utilities
  init-d-script, fstab-decode, killall5, pidof
  .
  It also contains the library scripts sourced by init-d-script and other
- initscripts that were formally in lsb-base.
+ initscripts that were formerly in lsb-base.
 
 Package: sysv-rc
+Homepage: https://salsa.debian.org/debian/sysvinit
 Architecture: all
 Multi-Arch: foreign
 Depends:
@@ -94,6 +99,7 @@ Description: System-V-like runlevel change mechanism
  configured through symbolic links in /etc/rc?.d/.
 
 Package: initscripts
+Homepage: https://salsa.debian.org/debian/sysvinit
 Architecture: all
 Multi-Arch: foreign
 Depends:
@@ -103,6 +109,13 @@ Depends:
 Recommends:
  e2fsprogs,
  psmisc,
+ util-linux-extra,
+Breaks: udev (<<  254.3-1),
+	util-linux-extra (<< 2.39.2-2.1~),
+	kmod (<< 34.1-1)
+Replaces: udev (<<  254.3-1),
+	  util-linux-extra (<< 2.39.2-2.1~),
+	  kmod (<< 34.1-1)
 Description: scripts for initializing and shutting down the system
  The scripts in this package initialize a standard Debian
  system at boot time and shut it down at halt or reboot time.
@@ -113,6 +126,7 @@ Depends:
  sysvinit-utils (>= 3.05-1),
  ${misc:Depends},
  ${shlibs:Depends},
+Conflicts: plymouth
 Breaks: manpages-fr (<< 4.15.0-9~),
 Replaces: manpages-fr (<< 4.15.0-9~),
 Description: daemon to log boot messages

@@ -35,7 +35,7 @@ case "$0" in
 	;;
 esac
 
-if [ -d /run/system/system ]; then
+if [ -d /run/systemd/system ]; then
 	if [ "$ACTION" = start ] && [ -f /var/log/boot ]; then
 		echo "(Booted up using systemd which doesn't write logs to system console. Please check 'journalctl -b' instead.)" > /var/log/boot
 	fi
@@ -68,21 +68,9 @@ case "$ACTION" in
 	[ "$VERBOSE" != no ] && log_end_msg $ES
 	if [ -r "$TMPLOG" ]
 	then
+		savelog -q -p -n -c 5 /var/log/boot
 		cat "$TMPLOG" >> /var/log/boot
 		rm -f "$TMPLOG"
-	fi
-	if [ -f /var/log/boot ] && [ -f /var/log/boot~ ]
-	then
-		[ "$VERBOSE" = no ] || log_action_begin_msg "Moving boot log file"
-		# bootlogd writes to boot, making backup at boot~
-		cd /var/log && {
-			chgrp adm boot || :
-			savelog -q -p -c 5 boot &&
-			    mv boot.0 boot      &&
-			    mv boot~ boot.0
-		}
-		ES=$?
-		[ "$VERBOSE" = no ] || log_action_end_msg $ES
 	fi
 	;;
   restart|force-reload)
