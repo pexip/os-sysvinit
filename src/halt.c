@@ -8,7 +8,7 @@
  *		execute an "shutdown -r". This is for compatibility with
  *		sysvinit 2.4.
  *
- * Usage:	halt [-n] [-w] [-d] [-f] [-h] [-i] [-p]
+ * Usage:	halt [-n] [-w] [-d] [-f] [-h] [-i] [-p] [-k]
  *		-n: don't sync before halting the system
  *		-w: only write a wtmp reboot record and exit.
  *		-d: don't write a wtmp record.
@@ -16,6 +16,8 @@
  *		-h: put harddisks in standby mode
  *		-i: shut down all network interfaces.
  *		-p: power down the system (if possible, otherwise halt).
+ *		-k: reboot the system using kexec.
+ *              -m: allow user to pass in message to Linux kernel to enable switching partitions
  *
  *		Reboot and halt are both this program. Reboot
  *		is just a link to halt. Invoking the program
@@ -56,6 +58,10 @@
 #include <signal.h>
 #include <stdio.h>
 #include <getopt.h>
+#ifdef __linux__
+#include <linux/reboot.h>
+#include <sys/syscall.h>
+#endif
 #include "reboot.h"
 #include "runlevellog.h"
 
@@ -75,16 +81,21 @@ extern void write_wtmp(char *user, char *id, int pid, int type, char *line);
  */
 void usage(void)
 {
-	fprintf(stderr, "usage: %s [-n] [-w] [-d] [-f] [-h] [-i]%s\n",
-		progname, strcmp(progname, "halt") ? "" : " [-p]");
-	fprintf(stderr, "\t-n: don't sync before halting the system\n");
-	fprintf(stderr, "\t-w: only write a wtmp reboot record and exit.\n");
+	fprintf(stderr, "usage: %s [-d] [-f] [-h] [-i] [-n] [-w]%s%s\n",
+		progname,
+		strcmp(progname, "halt") ? "" : " [-p]",
+		strcmp(progname, "reboot") ? "" : " [-k] [-m <message>]");
 	fprintf(stderr, "\t-d: don't write a wtmp record.\n");
 	fprintf(stderr, "\t-f: force halt/reboot, don't call shutdown.\n");
 	fprintf(stderr, "\t-h: put harddisks in standby mode.\n");
 	fprintf(stderr, "\t-i: shut down all network interfaces.\n");
+	fprintf(stderr, "\t-m: pass message from user to reboot process.\n");
+	fprintf(stderr, "\t-n: don't sync before halting the system\n");
+	fprintf(stderr, "\t-w: only write a wtmp reboot record and exit.\n");
 	if (!strcmp(progname, "halt"))
 		fprintf(stderr, "\t-p: power down the system (if possible, otherwise halt).\n");
+	if (!strcmp(progname, "reboot"))
+		fprintf(stderr, "\t-k: reboot the system using kexec.\n");
 	exit(1);
 }
 
@@ -162,8 +173,8 @@ void do_shutdown(char *fl, int should_poweroff, char *tm)
 
 	args[i++] = "shutdown";
 	args[i++] = fl;
-        if ( (! strcmp(fl, "-h") ) && (should_poweroff) )
-           args[i++] = "-P";
+        if (! strcmp(fl, "-h"))
+           args[i++] = (should_poweroff ? "-P" : "-H");
 	if (tm) {
 		args[i++] = "-t";
 		args[i++] = tm;
@@ -193,6 +204,8 @@ int main(int argc, char **argv)
 	int do_ifdown = 0;
 	int do_hddown = 0;
 	int do_poweroff = 0;
+	int do_kexec = 0;
+        char *user_message = NULL;
 	int c;
 	char *tm = NULL;
 
@@ -212,7 +225,7 @@ int main(int argc, char **argv)
 	/*
 	 *	Get flags
 	 */
-	while((c = getopt(argc, argv, ":ihdfnpwt:")) != EOF) {
+	while((c = getopt(argc, argv, ":ihdfm:npwkt:")) != EOF) {
 		switch(c) {
 			case 'n':
 				do_sync = 0;
@@ -236,6 +249,13 @@ int main(int argc, char **argv)
 			case 'p':
 				do_poweroff = 1;
 				break;
+			case 'k':
+				do_kexec = 1;
+				break;
+                        case 'm':
+                                user_message = optarg;
+                                do_hard = 1;
+                                break;
 			case 't':
 				tm = optarg;
 				break;
@@ -256,10 +276,24 @@ int main(int argc, char **argv)
 	}
 
 	if (!do_hard && !do_nothing) {
+		c = get_runlevel();
+
+		/*
+		 *	 We can't reboot using kexec through this path.
+		 */
+		if (c != '6' && do_reboot && do_kexec) {
+			fprintf(stderr, "ERROR: using -k at this"
+				" runlevel requires also -f\n"
+				"  (You probably want instead to reboot"
+				" normally and let your reboot\n"
+				"   script, usually /etc/init.d/reboot,"
+				" specify -k)\n");
+			exit(1);
+		}
+
 		/*
 		 *	See if we are in runlevel 0 or 6.
 		 */
-		c = get_runlevel();
 		if (c != '0' && c != '6')
 			do_shutdown(do_reboot ? "-r" : "-h", do_poweroff, tm);
 	}
@@ -295,6 +329,23 @@ int main(int argc, char **argv)
 	if (do_nothing) exit(0);
 
 	if (do_reboot) {
+		/*
+		 *	kexec or reboot
+		 */
+		if (do_kexec)
+			init_reboot(BMAGIC_KEXEC);
+
+                /* Regular reboot, but with special user message */
+                #ifdef __linux__
+                if (user_message)
+                {
+                   syscall(SYS_reboot, LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, 
+                           LINUX_REBOOT_CMD_RESTART2, user_message);
+                }
+                #endif
+		/*
+		 *	Fall through if failed
+		 */
 		init_reboot(BMAGIC_REBOOT);
 	} else {
 		/*

@@ -1,4 +1,125 @@
-sysvinit (3.06) unreleased; urgency=low
+sysvinit (3.14) released; urgency=medium
+
+    * Re-introduced DESTDIR flag in src/Makefile to assist building on Arch.
+    * Fixed typo in init.8 manual page.
+    * Expand process length in inittab to allow a command line 253 characters
+      (up from 127). Expand child process structure to accomidate 253
+      and some buffer room for newline/NULL.
+    * Clear buffer when reading long lines from inittab, avoids garbage left
+      over from old lines with long commands or comments.
+    * Drop lines which are too long from inttab conf and log warning rather
+      than truncate.
+
+
+sysvinit (3.13) released; urgency=low
+
+    * Adjusted manual page install location. Patch provided
+      by Mark Hindley.
+
+
+sysvinit (3.12) released; urgency=low
+
+    * There were instances of the ctime() function being called in multiple files without
+      checking the return value (can be NULL) and without checking the length of the
+      returned information. While there _should_ never be a case where ctime() fails
+      assuming success and length of returned string isn't ideal (or future-proof).
+      We now check the return value of ctime() in bootlogd, dowall, last, logsave, and
+      shutdown. Where no valid value is returned we supply a dummy value (usually a
+      space in place of the expected time stamp). We also no longer assume returned string
+      is at least 11-16 characters.
+
+    * Re-commit flexible Makefile for GoboLinux.
+
+    * Make sure pty.h and sys/sysmacros.h are included when building bootlogd on
+      systems with glibc.
+
+    * Fixed typos and syntax in manual page for init.8.
+      Edits provided by : Bjarni Ingi Gislason.
+
+    * Allow setting of location of the /usr directory in src/Makefile.
+      This is handled by the usrdir variable.
+
+    * Make sure src/Makefile uses sysconfdir (/etc by default) when installing
+      configuration files.
+
+    * Fix typos and syntax in pidof manual page.
+
+
+
+sysvinit (3.11) released; urgency=low
+
+    * Some escape characters were included in the inittab manual page, but not displayed
+    by the "man" command because they were not (ironically) properly escaped. This has been
+    fixed.
+
+    * Enabled chaining commands together in the inittab file. This allows the admin
+      to run commands like "task1 && task2" or "task2 || task2" from the inittab file.
+
+    * Fix typoes in halt manual page. Fixes provided by Bjarni Ingi Gislason.
+
+    * Fix typos/markdown in fstab-decode manual page.
+      Patch provided by Bjarni Ingi Gislason.
+
+
+sysvinit (3.10) released; urgency=low
+
+    *  When the user executes "machinectl stop", systemd sends SIGRTMIN+4 to PID 1 
+       in the container, and expects that to initiate a graceful shutdown (power-off).
+       SysV init now catches this signal and initiates a shutdown (shutdown -hP now).
+       - floppym provided patch to accomplish this.
+
+    * Fix issue in bootlogd which could cause the service to enter an endless loop
+      (and use too much CPU) when it is able to open a device for writing, but not actually
+      able to write to it. This resulted in bootlogd closing and re-opening the device over
+      and over. Now bootlogd should simply fail gracefully when it cannot write to an open
+      file/device.
+
+    * Fix formatting in shutdown.8 manual page. Cleaned up whitespace and special characters.
+
+
+sysvinit (3.09) released; urgency=low
+
+    * Patch for man/Makefile to fix the clean recipe.
+      Provided by Lucas Nussabaum and Mark Hindley
+
+    * On Linux systems, allow reboot command to pass a message
+      to the system firmware during the restart. This is
+      accomplished with the -m flag.
+
+    * Patch from kraj which allows hddown to compile
+      when musl is the C library.
+
+sysvinit (3.08) released; urgency=low
+    * floppym provided patch which causes the halt command
+      to call "shutdown -h -H" instead of "shutdown -h" when
+      halt is invoked without parameters. This forces the shutdown
+      command to set the INIT_HALT variable and assume, unless other
+      conditions apply, that the "halt" call really wants to halt the
+      machine and INIT_HALT should be set. In other words we
+      assume halt wants to halt unless told otherwise.
+      Addresses downstream Gentoo bug ID 911257.
+
+    * Applied a patch from floppm which adds kexec option to the halt command.
+
+    * Updated halt documentation and help output to display parameters in
+      alphabetical order.
+
+
+sysvinit (3.07) released; urgency=low
+    * Fixed killall5 so that processes in the omit list are
+      not sent any signals, including SIGSTOP.
+    * Fixed usage message for killall5 to be more accurate.
+    * pidof was not returning PIDs of programs which were launched
+      using a symbolic link. (ie /tmp/sleep when /tmp/sleep links to /usr/bin/sleep).
+      This is now fixed as we check both the realpath and symbolic path for processes.
+      In other words, "pidof /tmp/sleep" and "pidof /usr/bin/sleep" will return
+      the same PIDs when /tmp/sleep is a symbolic link to /usr/bin/sleep.
+    * Fixed memory initialization error in pidof. Fix provided by Markus Fischer.
+    * Accepted patch from Mark Hindley  which avoids clearing realpath information
+      in pidof when trying to find matching executables.
+
+
+sysvinit (3.06) released; urgency=low
     * Mark Hindley fixed typo in es.po
     * Mark Hindley cleaned up translation code in src/Makefile. 
     * Drop sulogin from Debian build. Removed libcrypt-dev dependency.
