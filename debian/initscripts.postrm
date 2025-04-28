@@ -8,8 +8,8 @@ set -e
 INITSCRIPTS="mountkernfs.sh mount-configfs brightness hostname.sh mountdevsubfs.sh checkroot.sh \
 	checkroot-bootclean.sh checkfs.sh mountall.sh mountall-bootclean.sh \
 	mountnfs.sh mountnfs-bootclean.sh bootmisc.sh urandom halt reboot \
-	umountroot umountfs umountnfs.sh sendsigs killprocs single motd \
-	bootlogs rc.local rmnologin"
+	udev umountroot umountfs umountnfs.sh sendsigs killprocs single motd \
+	bootlogs rc.local rmnologin hwclock.sh"
 
 case "$1" in
   purge)

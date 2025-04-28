@@ -278,7 +278,7 @@ domount () {
 					is_empty_dir "$MTPT" >/dev/null 2>&1 || log_warning_msg "Files under mount point '$MTPT' will be hidden."
 				fi
 				mount $MOUNTFLAGS -t $FSTYPE $CALLER_OPTS $FSTAB_OPTS $FS_OPTS $DEVNAME $MTPT
-				if [ "$FSTYPE" = "tmpfs" -a -x /sbin/restorecon ]; then
+				if [ "$FSTYPE" = "tmpfs" ] && [ -x /sbin/restorecon ]; then
 					/sbin/restorecon $MTPT
 				fi
 			fi
@@ -384,7 +384,9 @@ run_migrate ()
 	if [ ! -L "$OLD" ] && [ -d "$OLD" ] ; then
 		if [ "$OLD" != "/tmp" ]; then
 			log_warning_msg "Filesystem mounted on $OLD; setting up compatibility bind mount."
-			log_warning_msg "Please remove this mount from /etc/fstab; it is no longer needed, and it is preventing completion of the transition to $RUN."
+			if read_fstab_entry "$OLD" ; then
+				log_warning_msg "Please remove this mount from /etc/fstab; it is no longer needed, and it is preventing completion of the transition to $RUN."
+			fi
 		fi
 		mount -t $FSTYPE "$RUN" "$OLD" $OPTS
 	else
@@ -724,10 +726,11 @@ is_fastboot_active() {
 
 # This function does not actually belong here; it is duct-tape solution
 # for #901289.
-logsave_best_effort () {
-	if [ -x /sbin/logsave ] ; then
+logsave_best_effort() {
+	if [ -x /sbin/logsave ] && [ -e "${FSCK_LOGFILE}" ]; then
 		logsave -s "${FSCK_LOGFILE}" "$@"
 	else
+		log_failure_msg "Cannot persist the following output on disc"
 		"$@"
 	fi
 }

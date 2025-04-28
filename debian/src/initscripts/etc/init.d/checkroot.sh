@@ -100,7 +100,7 @@ do_start () {
 	#
 	# Does the root device in /etc/fstab match with the actual device ?
 	# If not we try to use the /dev/root alias device, and if that
-	# fails we create a temporary node in /run.
+	# fails we create a temporary node in /dev.
 	#
 	# Do this only on Linux. Neither kFreeBSD nor Hurd have
 	# /dev/root and the device ids used here are specific to
@@ -117,11 +117,11 @@ do_start () {
 				rootdev=/dev/root
 			else
 				if \
-					rm -f /run/rootdev \
-					&& mknod -m 600 /run/rootdev b ${rdev%:*} ${rdev#*:} \
-					&& [ -e /run/rootdev ]
+					rm -f /dev/rootdev \
+					&& mknod -m 600 /dev/rootdev b ${rdev%:*} ${rdev#*:} \
+					&& [ -b /dev/rootdev ]
 				then
-					rootdev=/run/rootdev
+					rootdev=/dev/rootdev
 				else
 					rootfatal=yes
 				fi
@@ -136,7 +136,7 @@ do_start () {
 	then
 		log_failure_msg "The device node $rootdev for the root filesystem is missing or incorrect 
 or there is no entry for the root filesystem listed in /etc/fstab. 
-The system is also unable to create a temporary node in /run. 
+The system is also unable to create a temporary node in /dev. 
 This means you have to fix the problem manually."
 		log_warning_msg "A maintenance shell will now be started. 
 CONTROL-D will terminate this shell and restart the system."
@@ -174,6 +174,13 @@ Will restart in 5 seconds."
 	if [ -e /run/initramfs/fsck-root ]
 	then
 		rootcheck=no
+		# logsave_best_effort but do not display again
+		if [ -x /sbin/logsave ] && [ -e "${FSCK_LOGFILE}" ]; then
+			logsave -s "${FSCK_LOGFILE}" >/dev/null \
+			    cat /run/initramfs/fsck.log
+		else
+			log_failure_msg "Cannot persist initramfs fsck.log"
+		fi
 	fi
 
 	if is_fastboot_active
@@ -329,9 +336,9 @@ but requested that the system be restarted."
 	fi
 
 	#
-	# Remove /run/rootdev if we created it.
+	# Remove /dev/rootdev if we created it.
 	#
-	rm -f /run/rootdev
+	rm -f /dev/rootdev
 
 	# Update mount options for mounts created in early boot
 	# S01mountkernfs.sh

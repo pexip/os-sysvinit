@@ -60,6 +60,8 @@ clean_tmp() {
 
 	# Does not exist
 	[ -d /tmp ] || return 1
+	# Read-only filesystem?
+	[ -w /tmp ] || return 0
 	# tmpfs does not require cleaning
 	[ -f /tmp/.tmpfs ] && return 0
 	# Can clean?
@@ -152,6 +154,8 @@ clean() {
 
 	# Does not exist
 	[ -d "$dir" ] || return 1
+	# Read-only filesystem?
+	[ -w "$dir" ] || return 0
 	# tmpfs does not require cleaning
 	[ -f "$dir/.tmpfs" ] && return 0
 	# Can clean?
@@ -179,7 +183,7 @@ clean_all()
 	log_begin_msg "Cleaning up temporary files..."
 	ES=0
 	clean_tmp || ES=1
-	clean /run "! -xtype d ! -name utmp ! -name innd.pid" || ES=1
+	clean /run "( -path /run/network/mountnfs -o ! -xtype d ! -name utmp ! -name innd.pid )" || ES=1
 	clean /run/lock "! -type d" || ES=1
 	clean /run/shm "! -type d" || ES=1
 	log_end_msg $ES

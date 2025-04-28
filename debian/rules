@@ -5,10 +5,7 @@ include debian/config/selinux.mk
 
 tmp     = $(CURDIR)/debian/tmp
 sysvtmp = $(CURDIR)/debian/sysvinit-core
-utiltmp = $(CURDIR)/debian/sysvinit-utils
-rctmp   = $(CURDIR)/debian/sysv-rc
 inittmp = $(CURDIR)/debian/initscripts
-bootlogdtmp = $(CURDIR)/debian/bootlogd
 doc	= /usr/share/doc
 
 LC_ALL	= POSIX
@@ -66,8 +63,9 @@ ifneq (,$(findstring $(DEB_HOST_ARCH_OS),linux kfreebsd))
 endif
 
 ifeq ($(derives_from_ubuntu),yes)
-ifneq (,$(findstring lsb-base, $(shell dh_listpackages)))
-	cp -p debian/src/lsb-base/init-functions.d/50-ubuntu-logging debian/lsb-base/lib/lsb/init-functions.d/
+ifneq (,$(findstring sysvinit-utils, $(shell dh_listpackages)))
+	cp -p debian/src/lsb-base/init-functions.d/50-ubuntu-logging \
+		debian/sysvinit-utils/lib/lsb/init-functions.d/
 endif
 endif
 
@@ -76,24 +74,11 @@ install-arch: build-arch
 
 override_dh_installchangelogs-arch:
 	dh_installchangelogs -psysvinit-core doc/Changelog
-
-	dh_installchangelogs -psysvinit-utils
-	rm -f $(utiltmp)$(doc)/sysvinit-utils/changelog
-	sed -i -ne '/sysvinit (2.93-8)/q' -e p \
-		$(utiltmp)$(doc)/sysvinit-utils/changelog.Debian
-
+	dh_installchangelogs -psysvinit-utils --exclude doc/Changelog
 	dh_installchangelogs -pbootlogd
-	sed -i -ne '/sysvinit (2.93-8)/q' -e p \
-		$(bootlogdtmp)$(doc)/bootlogd/changelog.Debian
 
 override_dh_installchangelogs-indep:
 	dh_installchangelogs
-	sed -i -ne '/sysvinit (2.93-8)/q' -e p \
-		$(rctmp)$(doc)/sysv-rc/changelog.Debian
-
-	dh_installchangelogs -pinitscripts
-	sed -i -ne '/sysvinit (2.93-8)/q' -e p \
-		$(inittmp)$(doc)/initscripts/changelog.Debian
 
 override_dh_installdeb:
 	dh_installdeb
@@ -105,11 +90,11 @@ ifeq ($(DEB_HOST_ARCH_OS), hurd)
 	ln -s halt-sysv.8.gz $(sysvtmp)/usr/share/man/man8/reboot-sysv.8.gz
 	rm $(sysvtmp)/usr/share/man/man8/poweroff.8.gz
 	ln -s halt-sysv.8.gz $(sysvtmp)/usr/share/man/man8/poweroff-sysv.8.gz
-	mv $(sysvtmp)/sbin/halt $(sysvtmp)/sbin/halt-sysv
-	rm $(sysvtmp)/sbin/reboot
-	ln -s halt-sysv $(sysvtmp)/sbin/reboot-sysv
-	rm $(sysvtmp)/sbin/poweroff
-	ln -s halt-sysv $(sysvtmp)/sbin/poweroff-sysv
+	mv $(sysvtmp)/usr/sbin/halt $(sysvtmp)/usr/sbin/halt-sysv
+	rm $(sysvtmp)/usr/sbin/reboot
+	ln -s halt-sysv $(sysvtmp)/usr/sbin/reboot-sysv
+	rm $(sysvtmp)/usr/sbin/poweroff
+	ln -s halt-sysv $(sysvtmp)/usr/sbin/poweroff-sysv
 endif
 
 override_dh_clean:

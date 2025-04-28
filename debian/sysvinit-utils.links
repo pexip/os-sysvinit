@@ -1,1 +1,1 @@
-sbin/killall5 bin/pidof
+usr/sbin/killall5 usr/bin/pidof

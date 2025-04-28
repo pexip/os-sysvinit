@@ -1,4 +1,4 @@
-.Dd August 5, 2019
+.Dd September 3, 2024
 .Dt INIT\-D\-SCRIPT 5 "Debian sysvinit"
 .Os Debian
 .Sh NAME
@@ -77,6 +77,18 @@ If the value is verbatim
 the process identifier will not be stored in any file.
 If this variable is not set, it gets a sensible default value,
 so it is rarely necessary to set this variable explicitly.
+.It Ev SETPRIV_ARGS
+If this directive is set and
+.Xr setpriv 1
+is available, the invocation of
+.Xr start\-stop\-daemon 8
+is wrapped in a call to
+.Xr setpriv 1
+with the specified arguments. Note that the
+.Fl \-chuid
+argument to
+.Xr start\-stop\-daemon 8
+requires CAP_SETUID and CAP_SETGID in the bounding capabilities set.
 .It Ev RELOAD_SIGNAL
 Signal number or name (without the SIG prefix) that will be sent to
 the process on
@@ -184,6 +196,7 @@ and before
 .Sh SEE ALSO
 .Xr inittab 8 ,
 .Xr service 8 ,
+.Xr setpriv 1 ,
 .Xr update\-rc.d 8 .
 .Sh AUTHORS
 .An -nosplit
