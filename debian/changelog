@@ -1,3 +1,9 @@
+sysvinit (3.14-4+pexip25u1) pexip-trixie; urgency=medium
+
+  * Initial trixie build
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Tue, 29 Apr 2025 22:59:07 +0100
+
 sysvinit (3.14-4) unstable; urgency=medium
 
   * d/control: bump Standards Version (no changes).
